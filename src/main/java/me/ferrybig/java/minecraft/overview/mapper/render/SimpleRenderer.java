@@ -13,6 +13,12 @@ import org.jnbt.CompoundTag;
 
 public abstract class SimpleRenderer implements RenderEngine {
 
+    private final RegionRenderer renderer;
+
+    public SimpleRenderer(RegionRenderer renderer) {
+        this.renderer = renderer;
+    }
+
     @Override
     public void addFile(String fileName, InputStream in) throws IOException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
