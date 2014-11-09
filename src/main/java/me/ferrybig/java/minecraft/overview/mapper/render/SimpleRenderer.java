@@ -21,7 +21,7 @@ public abstract class SimpleRenderer implements RenderEngine {
 
     @Override
     public void addFile(String fileName, InputStream in) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        renderer.renderFile(fileName, in);
     }
     
     protected abstract void addLevelDat(CompoundTag level) throws IOException;
