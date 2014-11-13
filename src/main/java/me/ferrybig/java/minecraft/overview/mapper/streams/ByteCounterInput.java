@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package minecraft.stream.renderer.streams;
+package me.ferrybig.java.minecraft.overview.mapper.streams;
 
 import java.io.Closeable;
 
@@ -15,10 +15,6 @@ import java.io.Closeable;
 public interface ByteCounterInput extends Closeable{
     public long getReadBytes();
     public void resetReadBytes();
-    public default long getAndResetReadBytes(){
-        long readBytes = getReadBytes();
-        resetReadBytes();
-        return readBytes;
-    }
+    public long getAndResetReadBytes();
     
 }

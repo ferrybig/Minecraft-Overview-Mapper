@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package minecraft.stream.renderer.streams;
+package me.ferrybig.java.minecraft.overview.mapper.streams;
 
 import java.io.DataInputStream;
 import java.io.InputStream;
@@ -34,6 +34,5 @@ public class ByteCountingDataInputStream extends DataInputStream implements Byte
     @Override
     public long getAndResetReadBytes() {
         return counter.getAndResetReadBytes();
-    }
-    
+    }    
 }

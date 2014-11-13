@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package minecraft.stream.renderer.streams;
+package me.ferrybig.java.minecraft.overview.mapper.streams;
 
 import java.io.DataInputStream;
 import java.io.DataOutput;
@@ -86,4 +86,10 @@ public class ByteCounterInputStream extends FilterInputStream implements ByteCou
         this.readBytes = 0;
     }
 
+    @Override
+    public long getAndResetReadBytes() {
+        long bytes = this.getReadBytes();
+        resetReadBytes();
+        return bytes;
+    }
 }
