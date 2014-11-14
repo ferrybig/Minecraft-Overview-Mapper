@@ -17,7 +17,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap.Biome;
 import me.ferrybig.java.minecraft.overview.mapper.render.BlockMap.Block;
-import minecraft.stream.renderer.streams.ByteCountingDataInputStream;
+import me.ferrybig.java.minecraft.overview.mapper.streams.ByteCountingDataInputStream;
 import org.jnbt.ByteArrayTag;
 import org.jnbt.ByteTag;
 import org.jnbt.CompoundTag;
@@ -56,13 +56,13 @@ public class DefaultImageRenderer implements RegionRenderer {
     public BufferedImage renderFile(String fileName, InputStream input) throws IOException {
         ByteCountingDataInputStream in = new ByteCountingDataInputStream(input);
         PriorityQueue<Integer> chunkIndexes = new PriorityQueue<>(
-                new Comparator<Integer>() {
+            new Comparator<Integer>() {
 
-                    @Override
-                    public int compare(Integer o1, Integer o2) {
-                        return Integer.compare(o1, o2);
-                    }
+                @Override
+                public int compare(Integer o1, Integer o2) {
+                    return Integer.compare(o1, o2);
                 }
+            }
         );
         for (int k = 0; k < SECTOR_INTS; ++k) {
             int offset = in.readInt();
@@ -90,58 +90,55 @@ public class DefaultImageRenderer implements RegionRenderer {
         CompoundTag globalTag;
         CompoundTag levelTag;
         byte[] data = new byte[4 * KIBIBYTE];
-        try {
-            while ((lowestChunkIndex = chunkIndexes.poll()) != null) {
-                long chunkIndex = lowestChunkIndex;
-                long bytesRead = in.getReadBytes();
-                //System.out.println(in.getReadBytes()+": Locating next chunk: " + chunkIndex);
-                if (bytesRead > chunkIndex) {
-                    throw new IOException("We already read " + bytesRead + " but a chunk exisists at byte index " + chunkIndex);
-                } else if (bytesRead < chunkIndex) {
-                    //System.out.println(in.getReadBytes() + ": Skipping " + (chunkIndex - bytesRead) + " bytes");
-                    this.skipFully(in, chunkIndex - bytesRead);
-                }
-                //System.out.println(in.getReadBytes() + ": Reading chunk " + chunkIndex + ".");
-                assert in.getReadBytes() == chunkIndex;
-                int chunkLength = in.readInt();
-                if (data.length < chunkLength) {
-                    data = new byte[(chunkLength / KIBIBYTE + 1) * KIBIBYTE];
-                }
-                in.readFully(data, 0, chunkLength);
-                byte version = data[0];
-                InputStream chunkStream = new ByteArrayInputStream(data, 1, data.length);
-                switch (version) {
-                    case VERSION_GZIP:
-                        chunkStream = new GZIPInputStream(chunkStream);
-                        break;
-                    case VERSION_DEFLATE:
-                        chunkStream = new InflaterInputStream(chunkStream);
-                        break;
-                    default:
-                        throw new IOException("Invalid format: " + version);
-                }
-                //chunkStream.mark(1024*16);
-                //FileOut.writeBytesToFile(chunkStream, new File("C:/Users/Fernando/Desktop/test.dat"));
-                //chunkStream.reset();
-                //if(chunkLength > 1)
-                //    throw new IOException("HALT");
-
-                globalTag = (CompoundTag) new NBTInputStream(
-                        new DataInputStream(chunkStream)).readTag();
-                levelTag = (CompoundTag) globalTag.getValue().get("Level");
-                globalX = ((IntTag) levelTag.getValue().get("xPos")).getValue();
-                globalZ = ((IntTag) levelTag.getValue().get("zPos")).getValue();
-                lastUpdate = ((LongTag) levelTag.getValue().get("LastUpdate")).getValue();
-                regionX = calculateChunkPos(globalX);
-                regionZ = calculateChunkPos(globalZ);
-
-                loadChunkData(levelTag,
-                        blockId, blockData, sectionsUsedList, biomes);
-                preRenderChunk(
-                        blockId, blockData, sectionsUsedList, biomes, blockMap, biomeMap, regionX, regionZ, imageColorArray, imageShadeArray);
+        while ((lowestChunkIndex = chunkIndexes.poll()) != null) {
+            long chunkIndex = lowestChunkIndex;
+            long bytesRead = in.getReadBytes();
+            //System.out.println(in.getReadBytes()+": Locating next chunk: " + chunkIndex);
+            if (bytesRead > chunkIndex) {
+                throw new IOException("We already read " + bytesRead + " but a chunk exisists at byte index " + chunkIndex);
+            } else if (bytesRead < chunkIndex) {
+                //System.out.println(in.getReadBytes() + ": Skipping " + (chunkIndex - bytesRead) + " bytes");
+                this.skipFully(in, chunkIndex - bytesRead);
             }
-        } catch (EOFException err) {
-            System.out.println("Unexpected EOF!");
+            //System.out.println(in.getReadBytes() + ": Reading chunk " + chunkIndex + ".");
+            assert in.getReadBytes() == chunkIndex;
+            int chunkLength = in.readInt();
+            if (data.length < chunkLength) {
+                data = new byte[(chunkLength / KIBIBYTE + 1) * KIBIBYTE];
+            }
+            in.readFully(data, 0, chunkLength);
+            byte version = data[0];
+            InputStream chunkStream = new ByteArrayInputStream(data, 1, data.length);
+            switch (version) {
+                case VERSION_GZIP:
+                    chunkStream = new GZIPInputStream(chunkStream);
+                    break;
+                case VERSION_DEFLATE:
+                    chunkStream = new InflaterInputStream(chunkStream);
+                    break;
+                default:
+                    throw new IOException("Invalid format: " + version);
+            }
+                //chunkStream.mark(1024*16);
+            //FileOut.writeBytesToFile(chunkStream, new File("C:/Users/Fernando/Desktop/test.dat"));
+            //chunkStream.reset();
+            //if(chunkLength > 1)
+            //    throw new IOException("HALT");
+
+            globalTag = (CompoundTag) new NBTInputStream(
+                new DataInputStream(chunkStream)).readTag();
+            levelTag = (CompoundTag) globalTag.getValue().get("Level");
+            globalX = ((IntTag) levelTag.getValue().get("xPos")).getValue();
+            globalZ = ((IntTag) levelTag.getValue().get("zPos")).getValue();
+            lastUpdate = ((LongTag) levelTag.getValue().get("LastUpdate")).getValue();
+            regionX = calculateChunkPos(globalX);
+            regionZ = calculateChunkPos(globalZ);
+
+            loadChunkData(levelTag,
+                blockId, blockData, sectionsUsedList, biomes);
+            preRenderChunk(
+                blockId, blockData, sectionsUsedList, biomes, blockMap, 
+                biomeMap, regionX, regionZ, imageColorArray, imageShadeArray);
         }
         demultiplyAlpha(imageColorArray);
         shade(imageShadeArray, imageColorArray);
@@ -188,10 +185,10 @@ public class DefaultImageRenderer implements RegionRenderer {
                         int index = y * 256 + z * 16 + x;
                         short blockType = (short) (blockIdsLow[index] & 0xFF);
                         if (blockAdd != null) {
-                            blockType |= nybble(blockAdd, index) << 8;
+                            blockType |= getBlockFromNybbleArray(blockAdd, index) << 8;
                         }
                         destSectionBlockIds[index] = blockType;
-                        destSectionData[index] = nybble(blockData, index);
+                        destSectionData[index] = getBlockFromNybbleArray(blockData, index);
                     }
                 }
             }
@@ -199,9 +196,9 @@ public class DefaultImageRenderer implements RegionRenderer {
     }
 
     private static void preRenderChunk(
-            short[][] sectionBlockIds, byte[][] sectionBlockData, boolean[] usedSections, byte[] biomeIds,
-            BlockMap blockMap, BiomeMap biomes,
-            int cx, int cz, int[] colors, short[] heights) {
+        short[][] sectionBlockIds, byte[][] sectionBlockData, 
+        boolean[] usedSections, byte[] biomeIds, BlockMap blockMap, 
+        BiomeMap biomes, int cx, int cz, int[] colors, short[] heights) {
         /**
          * Color of 16 air blocks stacked
          */
@@ -293,7 +290,7 @@ public class DefaultImageRenderer implements RegionRenderer {
         }
     }
 
-    private static final byte nybble(byte[] paramArrayOfByte, int paramInt) {
+    private static byte getBlockFromNybbleArray(byte[] paramArrayOfByte, int paramInt) {
         return (byte) ((paramInt % 2 == 0 ? paramArrayOfByte[(paramInt / 2)] : paramArrayOfByte[(paramInt / 2)] >> 4) & 0xF);
     }
 
