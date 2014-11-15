@@ -93,14 +93,11 @@ public class DefaultImageRenderer implements RegionRenderer {
         while ((lowestChunkIndex = chunkIndexes.poll()) != null) {
             long chunkIndex = lowestChunkIndex;
             long bytesRead = in.getReadBytes();
-            //System.out.println(in.getReadBytes()+": Locating next chunk: " + chunkIndex);
             if (bytesRead > chunkIndex) {
                 throw new IOException("We already read " + bytesRead + " but a chunk exisists at byte index " + chunkIndex);
             } else if (bytesRead < chunkIndex) {
-                //System.out.println(in.getReadBytes() + ": Skipping " + (chunkIndex - bytesRead) + " bytes");
                 this.skipFully(in, chunkIndex - bytesRead);
             }
-            //System.out.println(in.getReadBytes() + ": Reading chunk " + chunkIndex + ".");
             assert in.getReadBytes() == chunkIndex;
             int chunkLength = in.readInt();
             if (data.length < chunkLength) {
@@ -119,12 +116,6 @@ public class DefaultImageRenderer implements RegionRenderer {
                 default:
                     throw new IOException("Invalid format: " + version);
             }
-                //chunkStream.mark(1024*16);
-            //FileOut.writeBytesToFile(chunkStream, new File("C:/Users/Fernando/Desktop/test.dat"));
-            //chunkStream.reset();
-            //if(chunkLength > 1)
-            //    throw new IOException("HALT");
-
             globalTag = (CompoundTag) new NBTInputStream(
                 new DataInputStream(chunkStream)).readTag();
             levelTag = (CompoundTag) globalTag.getValue().get("Level");
@@ -328,7 +319,7 @@ public class DefaultImageRenderer implements RegionRenderer {
         return rawChunkLocation;
     }
 
-    private final void skipFully(InputStream in, long n) throws IOException {
+    private void skipFully(InputStream in, long n) throws IOException {
         long total = 0;
         long cur = 0;
 
