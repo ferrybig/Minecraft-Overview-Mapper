@@ -42,8 +42,7 @@ public class SimpleHTMLOutputRenderer extends SimpleRenderer {
             writer.append("</style>");
             writingStyleSheets = false;
         }
-        writer.append("<title>" + level.toString() + "</title>");
-        // TODO: find out correct tag used for the level name
+        writer.append("<title>" + ((CompoundTag)level.getValue().get("Data")).getValue().get("LevelName") + "</title>");
     }
 
     @Override
