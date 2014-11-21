@@ -84,8 +84,6 @@ public class SimpleHTMLOutputRenderer extends SimpleRenderer {
             writer.append("</style>");
             writingStyleSheets = false;
         }
-        System.out.println("Size X: " + getRegionSpanX() + " (" + minX + "," + maxX + ")");
-        System.out.println("Size Z: " + getRegionSpanZ() + " (" + minZ + "," + maxZ + ")");
         int lastZ = minZ;
         int lastX = minX - 1;
         for (Region r : getRegions()) {
@@ -110,7 +108,6 @@ public class SimpleHTMLOutputRenderer extends SimpleRenderer {
             assert (lastX) < maxX;
             writer.append("<td colspan=" + (maxX - lastX) + "></td>");
         }
-        System.out.println("Done connecting!");
         writer.append("</tr>\n<tfoot><tr><td class=\"footer\" colspan=" + getRegionSpanX()
             + "><center>Rendered at: " + new Date().toString() + " | "
             + "Map renderer created by ferrybig</center></td></tr></tfoot>");
