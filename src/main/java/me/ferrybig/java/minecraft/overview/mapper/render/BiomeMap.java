@@ -22,10 +22,10 @@ public class BiomeMap {
   public final Biome defaultBiome;
   public final Biome[] biomes;
 
-  public BiomeMap(Biome[] paramArrayOfBiome, Biome paramBiome)
+  public BiomeMap(Biome[] biomes, Biome defaultBiome)
   {
-    this.biomes = paramArrayOfBiome;
-    this.defaultBiome = paramBiome;
+    this.biomes = biomes;
+    this.defaultBiome = defaultBiome;
   }
 
   protected static BiomeMap load(BufferedReader paramBufferedReader, String paramString) throws IOException {
@@ -66,14 +66,11 @@ public class BiomeMap {
         return (int) Long.parseLong(paramString);
     }
 
-  protected static BiomeMap loadDefault() {
-    try {
-      try (BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(BiomeMap.class.getResourceAsStream("biome-colors.txt")))) {
+  public static BiomeMap loadDefault() throws IOException {
+    try (BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(BiomeMap.class.getResourceAsStream("biome-colors.txt")))) {
         return load(localBufferedReader, "(default biome colors)");
       }
-    } catch (IOException localIOException) {
-      throw new RuntimeException("Error loading built-in biome map", localIOException);
-    }
+    
   }
 
   public static BiomeMap load(File paramFile) throws IOException {

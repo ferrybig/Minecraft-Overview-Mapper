@@ -24,15 +24,16 @@ public class BlockMap {
     public static final int INF_FOLIAGE = 2;
     public static final int INF_WATER = 3;
     public final Block[] blocks;
-    public BlockMap(Block[] paramArrayOfBlock) {
-        if (paramArrayOfBlock == null) {
+
+    public BlockMap(Block[] blocks) {
+        if (blocks == null) {
             throw new IllegalArgumentException("Blocklist Empty");
         }
-        if (paramArrayOfBlock.length != 65536) {
+        if (blocks.length != 65536) {
             throw new IllegalArgumentException("Blocklist incorrect size");
         }
 
-        this.blocks = paramArrayOfBlock;
+        this.blocks = blocks;
     }
 
     public static BlockMap load(BufferedReader paramBufferedReader, String paramString) throws IOException {
@@ -99,13 +100,9 @@ public class BlockMap {
         }
     }
 
-    public static BlockMap loadDefault() {
-        try {
-            try (BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(BlockMap.class.getResourceAsStream("block-colors.txt")))) {
-                return load(localBufferedReader, "(default block colors)");
-            }
-        } catch (IOException localIOException) {
-            throw new RuntimeException("Error loading built-in color map", localIOException);
+    public static BlockMap loadDefault() throws IOException {
+        try (BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(BlockMap.class.getResourceAsStream("block-colors.txt")))) {
+            return load(localBufferedReader, "(default block colors)");
         }
     }
 
