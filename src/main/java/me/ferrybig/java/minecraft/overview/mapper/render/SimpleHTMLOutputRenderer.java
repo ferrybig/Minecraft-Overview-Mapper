@@ -42,7 +42,7 @@ public class SimpleHTMLOutputRenderer extends SimpleRenderer {
             writer.append("</style>");
             writingStyleSheets = false;
         }
-        writer.append("<title>" + ((CompoundTag)level.getValue().get("Data")).getValue().get("LevelName") + "</title>");
+        writer.append("<title>" + ((CompoundTag) level.getValue().get("Data")).getValue().get("LevelName") + "</title>");
     }
 
     @Override
@@ -54,28 +54,28 @@ public class SimpleHTMLOutputRenderer extends SimpleRenderer {
         ByteArrayOutputStream stream = new ByteArrayOutputStream(1024 * 8);
         ImageIO.write(tile, imageformat, stream);
         writer.append("#" + getID(x, z)
-            + " {background:url('data:image/" + imageformat + ";base64,").
-            append(Base64.encodeBytes(stream.toByteArray(), 0, stream.size())).
-            append("');}\n");
+                + " {background:url('data:image/" + imageformat + ";base64,").
+                append(Base64.encodeBytes(stream.toByteArray(), 0, stream.size())).
+                append("');}\n");
         this.addRegion(this.createRegion(x, z));
     }
 
     @Override
     public void startRender() throws IOException {
         writer.append("<html><head>\n").
-            append("<style type=\"text/css\">").
-            append(""
-                + "#render{border:4px black inset;background:black url('data:image/png;base64,"
-                + "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAA"
-                + "FklEQVQI12NgYGBwc3NjcHNzY2BgAAALigGlEaF+BwAAAABJRU5ErkJggg==');"
-                + "background-size: 2px;color:white;}\n"
-                + "#render > tr td{font-size:0px;width:1px;height:1px;overflow:visible;border:none}\n"
-                + "#render td div{width:512px;height:512px;display:inline-block;"
-                + "background-size:100%;overflow:hidden;}\n"
-                + "#render td div, td {margin:0px;padding:0px}\n"
-                + "#render .header, #render .footer {margin: 4px;}\n"
-            ).
-            append("</style>\n");
+                append("<style type=\"text/css\">").
+                append(""
+                        + "#render{border:4px black inset;background:black url('data:image/png;base64,"
+                        + "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAA"
+                        + "FklEQVQI12NgYGBwc3NjcHNzY2BgAAALigGlEaF+BwAAAABJRU5ErkJggg==');"
+                        + "background-size: 2px;color:white;}\n"
+                        + "#render > tr td{font-size:0px;width:1px;height:1px;overflow:visible;border:none}\n"
+                        + "#render td div{width:512px;height:512px;display:inline-block;"
+                        + "background-size:100%;overflow:hidden;}\n"
+                        + "#render td div, td {margin:0px;padding:0px}\n"
+                        + "#render .header, #render .footer {margin: 4px;}\n"
+                ).
+                append("</style>\n");
     }
 
     @Override
@@ -84,6 +84,10 @@ public class SimpleHTMLOutputRenderer extends SimpleRenderer {
             writer.append("</style>");
             writingStyleSheets = false;
         }
+        writer.append("</head><body>");
+        writer.append("<table id=\"render\" cellspacing=\"0\" cellpadding=\"0\">"
+                + "<thead><tr><td class=\"header\" colspan=" + maxX + ">"
+                + "<center>Map renderer created by ferrybig</center></td></tr></thead>\n<tr>");
         int lastZ = minZ;
         int lastX = minX - 1;
         for (Region r : getRegions()) {
@@ -109,8 +113,8 @@ public class SimpleHTMLOutputRenderer extends SimpleRenderer {
             writer.append("<td colspan=" + (maxX - lastX) + "></td>");
         }
         writer.append("</tr>\n<tfoot><tr><td class=\"footer\" colspan=" + getRegionSpanX()
-            + "><center>Rendered at: " + new Date().toString() + " | "
-            + "Map renderer created by ferrybig</center></td></tr></tfoot>");
+                + "><center>Rendered at: " + new Date().toString() + " | "
+                + "Map renderer created by ferrybig</center></td></tr></tfoot>");
         writer.append("</table></body></html>");
     }
 
@@ -148,7 +152,7 @@ public class SimpleHTMLOutputRenderer extends SimpleRenderer {
     private Region createRegion(int x, int z) {
         Region r = new Region();
         r.rx = x;
-        r.rz = x;
+        r.rz = z;
         return r;
     }
 
