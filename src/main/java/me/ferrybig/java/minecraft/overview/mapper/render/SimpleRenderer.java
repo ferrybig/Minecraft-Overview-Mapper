@@ -32,6 +32,8 @@ public abstract class SimpleRenderer implements RenderEngine {
                 Integer.parseInt((localMatcher.group(2))));
         } else if (fileName.equals("level.dat")) {
             this.addLevelDat((CompoundTag) new NBTInputStream(in).readTag());
+        } else if (fileName.endsWith("mcr")) {
+            
         } else {
             throw new IOException("Unknown file: "+fileName);
         }
