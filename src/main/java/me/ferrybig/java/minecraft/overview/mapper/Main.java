@@ -28,7 +28,7 @@ public class Main {
             RegionRenderer rend = new DefaultImageRenderer(BlockMap.loadDefault(), BiomeMap.loadDefault());
             SimpleHTMLOutputRenderer render = new SimpleHTMLOutputRenderer(rend, writer, "gif");
             render.startRender();
-            File root = new File("H:/world");
+            File root = new File("E:\\Minecraft\\Saves\\Wolf test");
             List<File> files = new ArrayList<>();
             files.add(new File(root,"level.dat"));
             files.addAll(Arrays.asList(new File(root, "region").listFiles())); 
