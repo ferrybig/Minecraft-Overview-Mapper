@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>me.ferrybig.java.minecraft</groupId>
+    <groupId>me.ferrybig.javacoding.minecraft</groupId>
     <artifactId>Minecraft-Overview-Mapper</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
@@ -10,4 +10,32 @@
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
+	<repositories>
+		<repository>
+			<id>ferrybig-repository</id>
+			<url>http://ferrybig.me/repository/</url>
+		</repository>
+	</repositories>
+	<distributionManagement>
+		<repository>
+			<id>ferrybig-repository</id>
+			<url>scpexe://ferrybig.me/repository</url>
+		</repository>
+	</distributionManagement>
+	<build>
+		<extensions>
+			<!-- Enabling the use of SSH -->
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-ssh-external</artifactId>
+				<version>1.0-beta-6</version>
+			</extension>
+		</extensions>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+	</build>
 </project>
