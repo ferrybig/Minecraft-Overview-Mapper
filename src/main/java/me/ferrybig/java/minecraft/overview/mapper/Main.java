@@ -17,36 +17,58 @@ import java.util.List;
 import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap;
 import me.ferrybig.java.minecraft.overview.mapper.render.BlockMap;
 import me.ferrybig.java.minecraft.overview.mapper.render.DefaultImageRenderer;
+import me.ferrybig.java.minecraft.overview.mapper.render.ImageDirectoryRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.RegionRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.SimpleHTMLOutputRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.SimpleRenderer;
 
 public class Main {
 
-    public static void main(String... list) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("test.html"))) {
-            RegionRenderer rend = new DefaultImageRenderer(BlockMap.loadDefault(), BiomeMap.loadDefault());
-            SimpleHTMLOutputRenderer render = new SimpleHTMLOutputRenderer(rend, writer, "gif");
-            render.startRender();
-            File root = new File("E:\\Minecraft\\Saves\\Wolf test");
-            List<File> files = new ArrayList<>();
-            files.add(new File(root,"level.dat"));
-            files.addAll(Arrays.asList(new File(root, "region").listFiles())); 
-            final int size = files.size();
-            
-            for (int i = 0; i < size; i++) {
-                File file = files.get(i);
-                try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
-                    System.out.println(i + "/" + size + ": "+file.getName() + ": start");
-                    render.addFile(file.getName(), in);
-                    System.out.println(i + "/" + size + ": "+file.getName() + ": done");
-                }
-            }
-            render.finishRender();
-        }
-    }
+	public static void main(String... list) throws IOException {
+		if ("file".equals(list[0])) {
+			RegionRenderer rend = new DefaultImageRenderer(BlockMap.loadDefault(), BiomeMap.loadDefault());
+			SimpleRenderer render = new ImageDirectoryRenderer(rend, new File(list[2]).toPath(), "gif");
+			render.startRender();
+			File root = new File(list[1]);
+			List<File> files = new ArrayList<>();
+			files.add(new File(root, "level.dat"));
+			files.addAll(Arrays.asList(new File(root, "region").listFiles()));
+			final int size = files.size();
 
-    private static class Builder {
+			for (int i = 0; i < size; i++) {
+				File file = files.get(i);
+				try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
+					System.out.println(i + "/" + size + ": " + file.getName() + ": start");
+					render.addFile(file.getName(), in);
+					System.out.println(i + "/" + size + ": " + file.getName() + ": done");
+				}
+			}
+			render.finishRender();
+		} else {
+			try (BufferedWriter writer = new BufferedWriter(new FileWriter(list[2]))) {
+				RegionRenderer rend = new DefaultImageRenderer(BlockMap.loadDefault(), BiomeMap.loadDefault());
+				SimpleHTMLOutputRenderer render = new SimpleHTMLOutputRenderer(rend, writer, "gif");
+				render.startRender();
+				File root = new File(list[1]);
+				List<File> files = new ArrayList<>();
+				files.add(new File(root, "level.dat"));
+				files.addAll(Arrays.asList(new File(root, "region").listFiles()));
+				final int size = files.size();
 
-    }
+				for (int i = 0; i < size; i++) {
+					File file = files.get(i);
+					try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
+						System.out.println(i + "/" + size + ": " + file.getName() + ": start");
+						render.addFile(file.getName(), in);
+						System.out.println(i + "/" + size + ": " + file.getName() + ": done");
+					}
+				}
+				render.finishRender();
+			}
+		}
+	}
+
+	private static class Builder {
+
+	}
 }

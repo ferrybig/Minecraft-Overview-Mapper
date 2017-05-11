@@ -5,6 +5,7 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
+import com.flowpowered.nbt.CompoundTag;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,7 +15,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import javax.imageio.ImageIO;
 import me.ferrybig.java.minecraft.overview.mapper.Base64;
-import org.jnbt.CompoundTag;
 
 public class SimpleHTMLOutputRenderer extends SimpleRenderer {
 
