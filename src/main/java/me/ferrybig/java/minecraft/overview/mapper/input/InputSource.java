@@ -3,15 +3,17 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.overview.mapper.input;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.stream.Stream;
 
-public interface InputProcessor {
-    public void registerListener(InputNotifer listener);
-    
-    public void unRegisterListener(InputNotifer listener);
-    
-    public void start() throws IOException;
+public interface InputSource {
+
+	public Stream<PreparedFile> stream() throws IOException;
+
+	public default void closeStreamIfNeeded(InputStream in) throws IOException {
+		in.close();
+	}
 }

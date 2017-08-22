@@ -16,33 +16,48 @@ import java.util.zip.GZIPInputStream;
 
 public abstract class SimpleRenderer implements RenderEngine {
 
-    private static final Pattern rfpat
-        = Pattern.compile("^r\\.(-?\\d+)\\.(-?\\d+)\\.mca$");
-    private final RegionRenderer renderer;
+	private static final Pattern rfpat
+			= Pattern.compile("^(?:[^/]*/)*r\\.(-?\\d+)\\.(-?\\d+)\\.mca$");
+	private final RegionRenderer renderer;
 
-    public SimpleRenderer(RegionRenderer renderer) {
-        this.renderer = renderer;
-    }
+	public SimpleRenderer(RegionRenderer renderer) {
+		this.renderer = renderer;
+	}
 
-    @Override
-    public void addFile(String fileName, InputStream in) throws IOException {
-        Matcher localMatcher;
-        if ((localMatcher = rfpat.matcher(fileName)).matches()) {
-            addImage(renderer.renderFile(fileName, in),
-                Integer.parseInt((localMatcher.group(1))),
-                Integer.parseInt((localMatcher.group(2))));
-        } else if (fileName.equals("level.dat")) {
-            this.addLevelDat((CompoundTag) new NBTInputStream(new GZIPInputStream(in), false).readTag());
-        } else if (fileName.endsWith("mcr")) {
-            
-        } else {
-            throw new IOException("Unknown file: "+fileName);
-        }
-    }
+	@Override
+	public void addFile(String fileName, InputStream in) throws IOException {
+		Matcher localMatcher;
+		if ((localMatcher = rfpat.matcher(fileName)).matches()) {
+			addImage(renderer.renderFile(fileName, in),
+					Integer.parseInt((localMatcher.group(1))),
+					Integer.parseInt((localMatcher.group(2))));
+		} else if (fileName.equals("level.dat")) {
+			this.addLevelDat((CompoundTag) new NBTInputStream(new GZIPInputStream(in), false).readTag());
+		} else if (fileName.endsWith("mcr")) {
 
-    protected abstract void addLevelDat(CompoundTag level) throws IOException;
+		} else {
+			throw new IOException("Unknown file: " + fileName);
+		}
+	}
 
-    protected abstract void addImage(BufferedImage tile, int x, int z)
-        throws IOException;
+	protected abstract void addLevelDat(CompoundTag level) throws IOException;
+
+	protected abstract void addImage(BufferedImage tile, int x, int z)
+			throws IOException;
+
+	@Override
+	public RenderEngine fork() {
+		throw new IllegalStateException("Not concurrent");
+	}
+
+	@Override
+	public void merge(RenderEngine m) {
+		throw new IllegalStateException("Not concurrent");
+	}
+
+	@Override
+	public boolean isConcurrent() {
+		return false;
+	}
 
 }

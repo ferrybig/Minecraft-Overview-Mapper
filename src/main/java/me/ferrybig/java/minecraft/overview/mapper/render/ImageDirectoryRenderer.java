@@ -47,8 +47,9 @@ public class ImageDirectoryRenderer extends SimpleRenderer {
 
 	@Override
 	public void startRender() throws IOException {
-		if(!target.toFile().exists() && !target.toFile().mkdirs())
+		if (!target.toFile().exists() && !target.toFile().mkdirs()) {
 			throw new IOException("Target directory creation failed");
+		}
 		// TODO
 	}
 
