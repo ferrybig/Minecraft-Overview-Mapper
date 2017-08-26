@@ -30,7 +30,7 @@ public abstract class SimpleRenderer implements RenderEngine {
 			addImage(renderer.renderFile(fileName, in),
 					Integer.parseInt((localMatcher.group(1))),
 					Integer.parseInt((localMatcher.group(2))));
-		} else if (fileName.equals("level.dat")) {
+		} else if (fileName.endsWith("level.dat")) {
 			this.addLevelDat((CompoundTag) new NBTInputStream(in).readTag());
 		} else if (fileName.endsWith("mcr")) {
 
