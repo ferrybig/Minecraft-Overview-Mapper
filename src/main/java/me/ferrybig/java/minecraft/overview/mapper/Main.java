@@ -80,7 +80,7 @@ public class Main {
 			inputSource = new DirectoryInputSource(in.toFile());
 		}
 		RenderEngine outputSource;
-		if (out.toAbsolutePath().endsWith(".html")) {
+		if (out.toAbsolutePath().toString().endsWith(".html")) {
 			outputSource = new SimpleHTMLOutputRenderer(rend, out.toFile(), "gif");
 		} else {
 			outputSource = new SimpleImageOutputRenderer(rend, out);

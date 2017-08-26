@@ -10,12 +10,6 @@
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
-	<repositories>
-		<repository>
-			<id>ferrybig-repository</id>
-			<url>http://ferrybig.me/repository/</url>
-		</repository>
-	</repositories>
 	<distributionManagement>
 		<repository>
 			<id>ferrybig-repository</id>
@@ -23,6 +17,11 @@
 		</repository>
 	</distributionManagement>
 	<dependencies>
+		<dependency>
+			<groupId>com.flowpowered</groupId>
+			<artifactId>flow-nbt</artifactId>
+			<version>1.0.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
@@ -51,5 +50,64 @@
 				<filtering>true</filtering>
 			</resource>
 		</resources>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>2.1</version>
+				<executions>
+					<execution>
+						<id>copy</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>com.flowpowered</groupId>
+									<artifactId>flow-nbt</artifactId>
+									<version>1.0.0</version>
+									<overWrite>true</overWrite>
+									<outputDirectory>${project.basedir}/target/lib</outputDirectory>
+									<destFileName>flow-nbt-1.0.0.jar</destFileName>
+								</artifactItem>
+								<artifactItem>
+									<groupId>org.apache.commons</groupId>
+									<artifactId>commons-compress</artifactId>
+									<version>1.11</version>
+									<overWrite>true</overWrite>
+									<outputDirectory>${project.basedir}/target/lib</outputDirectory>
+									<destFileName>commons-compress-1.11.jar</destFileName>
+								</artifactItem>
+								<artifactItem>
+									<groupId>commons-cli</groupId>
+									<artifactId>commons-cli</artifactId>
+									<version>1.4</version>
+									<overWrite>true</overWrite>
+									<outputDirectory>${project.basedir}/target/lib</outputDirectory>
+									<destFileName>commons-cli-1.4.jar</destFileName>
+								</artifactItem>
+							</artifactItems>
+							<!-- other configurations here -->
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+							<mainClass>me.ferrybig.java.minecraft.overview.mapper.Main</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+		</plugins>
 	</build>
 </project>

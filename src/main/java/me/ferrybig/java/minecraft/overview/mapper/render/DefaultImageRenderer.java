@@ -5,6 +5,14 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
+import com.flowpowered.nbt.ByteArrayTag;
+import com.flowpowered.nbt.ByteTag;
+import com.flowpowered.nbt.CompoundTag;
+import com.flowpowered.nbt.IntTag;
+import com.flowpowered.nbt.ListTag;
+import com.flowpowered.nbt.LongTag;
+import com.flowpowered.nbt.Tag;
+import com.flowpowered.nbt.stream.NBTInputStream;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -19,14 +27,6 @@ import java.util.zip.InflaterInputStream;
 import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap.Biome;
 import me.ferrybig.java.minecraft.overview.mapper.render.BlockMap.Block;
 import me.ferrybig.java.minecraft.overview.mapper.streams.ByteCountingDataInputStream;
-import org.jnbt.ByteArrayTag;
-import org.jnbt.ByteTag;
-import org.jnbt.CompoundTag;
-import org.jnbt.IntTag;
-import org.jnbt.ListTag;
-import org.jnbt.LongTag;
-import org.jnbt.NBTInputStream;
-import org.jnbt.Tag;
 
 /**
  * This is the default image renderer used by the code, this render as a nice
@@ -106,7 +106,7 @@ public class DefaultImageRenderer implements RegionRenderer {
 			}
 			in.readFully(data, 0, chunkLength);
 			byte version = data[0];
-			InputStream chunkStream = new ByteArrayInputStream(data, 1, data.length);
+			InputStream chunkStream = new ByteArrayInputStream(data, 1, data.length - 1);
 			switch (version) {
 				case VERSION_GZIP:
 					chunkStream = new GZIPInputStream(chunkStream);
@@ -118,7 +118,7 @@ public class DefaultImageRenderer implements RegionRenderer {
 					throw new IOException("Invalid format: " + version);
 			}
 			globalTag = (CompoundTag) new NBTInputStream(
-					new DataInputStream(chunkStream)).readTag();
+					new DataInputStream(chunkStream), false).readTag();
 			levelTag = (CompoundTag) globalTag.getValue().get("Level");
 			globalX = ((IntTag) levelTag.getValue().get("xPos")).getValue();
 			globalZ = ((IntTag) levelTag.getValue().get("zPos")).getValue();
@@ -156,8 +156,7 @@ public class DefaultImageRenderer implements RegionRenderer {
 			}
 		}
 
-		for (Tag t : ((ListTag) levelTag.getValue().get("Sections")).getValue()) {
-			CompoundTag sectionInfo = (CompoundTag) t;
+		for (CompoundTag sectionInfo : ((ListTag<CompoundTag>) levelTag.getValue().get("Sections")).getValue()) {
 			int sectionIndex = ((ByteTag) sectionInfo.getValue().get("Y")).getValue().intValue();
 			byte[] blockIdsLow = ((ByteArrayTag) sectionInfo.getValue().get("Blocks")).getValue();
 			byte[] blockData = ((ByteArrayTag) sectionInfo.getValue().get("Data")).getValue();

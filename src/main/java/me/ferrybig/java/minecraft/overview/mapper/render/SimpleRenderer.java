@@ -5,13 +5,14 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
+import com.flowpowered.nbt.CompoundTag;
+import com.flowpowered.nbt.stream.NBTInputStream;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jnbt.CompoundTag;
-import org.jnbt.NBTInputStream;
+import java.util.zip.GZIPInputStream;
 
 public abstract class SimpleRenderer implements RenderEngine {
 
@@ -31,7 +32,7 @@ public abstract class SimpleRenderer implements RenderEngine {
 					Integer.parseInt((localMatcher.group(1))),
 					Integer.parseInt((localMatcher.group(2))));
 		} else if (fileName.endsWith("level.dat")) {
-			this.addLevelDat((CompoundTag) new NBTInputStream(in).readTag());
+			this.addLevelDat((CompoundTag) new NBTInputStream(new GZIPInputStream(in), false).readTag());
 		} else if (fileName.endsWith("mcr")) {
 
 		} else {
