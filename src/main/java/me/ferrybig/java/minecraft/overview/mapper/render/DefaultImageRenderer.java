@@ -147,7 +147,7 @@ public class DefaultImageRenderer implements RegionRenderer {
 		for (int i = 0; i < MAX_CHUNK_SECTIONS; i++) {
 			sectionsUsed[i] = false;
 		}
-		Tag biomesTag = levelTag.getValue().get("Biomes");
+		Tag<?> biomesTag = levelTag.getValue().get("Biomes");
 		if (biomesTag != null) {
 			System.arraycopy(((ByteArrayTag) biomesTag).getValue(), 0, biomeIds, 0, 16 * 16);
 		} else {
@@ -160,7 +160,7 @@ public class DefaultImageRenderer implements RegionRenderer {
 			int sectionIndex = ((ByteTag) sectionInfo.getValue().get("Y")).getValue().intValue();
 			byte[] blockIdsLow = ((ByteArrayTag) sectionInfo.getValue().get("Blocks")).getValue();
 			byte[] blockData = ((ByteArrayTag) sectionInfo.getValue().get("Data")).getValue();
-			Tag addTag = sectionInfo.getValue().get("Add");
+			Tag<?> addTag = sectionInfo.getValue().get("Add");
 			byte[] blockAdd = null;
 			if (addTag != null) {
 				blockAdd = ((ByteArrayTag) addTag).getValue();
