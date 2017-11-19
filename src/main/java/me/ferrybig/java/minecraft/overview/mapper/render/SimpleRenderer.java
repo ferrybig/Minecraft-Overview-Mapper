@@ -16,7 +16,7 @@ import java.util.zip.GZIPInputStream;
 
 public abstract class SimpleRenderer implements RenderEngine {
 
-	private static final Pattern rfpat
+	private static final Pattern REGION_FILE_PATTERN
 			= Pattern.compile("^(?:[^/]*/)*r\\.(-?\\d+)\\.(-?\\d+)\\.mca$");
 	private final RegionRenderer renderer;
 
@@ -27,7 +27,7 @@ public abstract class SimpleRenderer implements RenderEngine {
 	@Override
 	public void addFile(String fileName, InputStream in) throws IOException {
 		Matcher localMatcher;
-		if ((localMatcher = rfpat.matcher(fileName)).matches()) {
+		if ((localMatcher = REGION_FILE_PATTERN.matcher(fileName)).matches()) {
 			addImage(renderer.renderFile(fileName, in),
 					Integer.parseInt((localMatcher.group(1))),
 					Integer.parseInt((localMatcher.group(2))));
