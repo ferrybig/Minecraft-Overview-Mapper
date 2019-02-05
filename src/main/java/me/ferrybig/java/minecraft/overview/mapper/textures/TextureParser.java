@@ -8,7 +8,9 @@ package me.ferrybig.java.minecraft.overview.mapper.textures;
 
 import com.google.gson.JsonObject;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -24,9 +26,19 @@ import me.ferrybig.java.minecraft.overview.mapper.textures.blockstate.Unresolved
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.Variant;
 
 public class TextureParser {
-	private final Map<String, Variant> variants = new HashMap<>();
+	private final Map<String, UnresolvedBlockState> variants = new HashMap<>();
 	private static final String BLOCKSTATES_PREFIX = "blockstates/";
 	private static final String BLOCKSTATES_SUFFIX = ".json";
+
+	private static InputStream readFromZipList(List<ZipFile> files, String filename) throws IOException {
+		for(ZipFile file : files) {
+			ZipEntry entry = file.getEntry(filename);
+			if(entry != null) {
+				return file.getInputStream(entry);
+			}
+		}
+		throw new FileNotFoundException("File not found: " + filename);
+	}
 
 	public void readAll(List<File> files) throws IOException {
 		List<ZipFile> zipFiles = new ArrayList<>(files.size());
@@ -47,6 +59,13 @@ public class TextureParser {
 						continue;
 					}
 					String materialName = name.substring(BLOCKSTATES_PREFIX.length(), name.length() - BLOCKSTATES_SUFFIX.length());
+					materials.add(materialName);
+				}
+			}
+			// Discovery done, its now time to resolve all files
+			Map<String, Model> modelCache = new HashMap<>();
+			for(String material : materials) {
+				try(InputStream materialInputStream = readFromZipList(zipFiles, BLOCKSTATES_PREFIX + material + BLOCKSTATES_SUFFIX)) {
 
 				}
 			}
@@ -62,11 +81,11 @@ public class TextureParser {
 	}
 
 	private DefaultVariant parseTexture(JsonObject object, DefaultVariant parent) {
-		
+		return null;
 	}
 
 	public UnresolvedBlockState getMaterial(String material) {
-
+		return variants.get(material);
 	}
 
 	public Variant getMaterial(String material, SortedMap<String, String> map) {
