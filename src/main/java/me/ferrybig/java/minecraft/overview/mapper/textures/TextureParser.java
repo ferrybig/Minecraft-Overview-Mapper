@@ -7,10 +7,14 @@
 package me.ferrybig.java.minecraft.overview.mapper.textures;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -63,10 +67,19 @@ public class TextureParser {
 				}
 			}
 			// Discovery done, its now time to resolve all files
+			JsonParser parser = new JsonParser();
 			Map<String, Model> modelCache = new HashMap<>();
 			for(String material : materials) {
-				try(InputStream materialInputStream = readFromZipList(zipFiles, BLOCKSTATES_PREFIX + material + BLOCKSTATES_SUFFIX)) {
-
+				try {
+					JsonObject mainMaterial;
+					try(Reader materialInputStream = new InputStreamReader(
+						readFromZipList(zipFiles, BLOCKSTATES_PREFIX + material + BLOCKSTATES_SUFFIX),
+						StandardCharsets.UTF_8
+					)) {
+						mainMaterial = parser.parse(materialInputStream).getAsJsonObject();
+					}
+				} catch(IOException e) {
+					throw new IOException("Unable to parse material " + material, e);
 				}
 			}
 		} finally {
