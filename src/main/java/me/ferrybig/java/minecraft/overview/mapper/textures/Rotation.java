@@ -16,6 +16,7 @@ public class Rotation {
 	 */
 	private final double angle;
 	private final boolean rescale;
+	public static final Rotation NOOP = new Rotation(new Vector3d(0,0,0), Axis.X, 0, false);
 
 	public Rotation(@Nonnull Vector3d origin, @Nonnull Axis rotation, double angle, boolean rescale) {
 		this.origin = origin;

@@ -13,21 +13,21 @@ import javax.annotation.Nullable;
 public class Model {
 
 	@Nonnull
-	private final List<Cube> element;
+	private final List<Cube> elements;
 	@Nonnull
 	private final Map<String, String> texture;
 	@Nullable
 	private final Model parent;
 
-	public Model(List<Cube> element, Map<String, String> texture, Model parent) {
-		this.element = element;
+	public Model(List<Cube> elements, Map<String, String> texture, Model parent) {
+		this.elements = elements;
 		this.texture = texture;
 		this.parent = parent;
 	}
 
 	@Nonnull
-	public List<Cube> getElement() {
-		return element;
+	public List<Cube> getElements() {
+		return elements;
 	}
 
 	@Nonnull
