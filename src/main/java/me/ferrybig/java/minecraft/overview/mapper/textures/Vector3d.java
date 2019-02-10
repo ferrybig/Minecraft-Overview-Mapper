@@ -3,10 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.overview.mapper.textures;
 
 public final class Vector3d {
+
 	private final double x;
 	private final double y;
 	private final double z;

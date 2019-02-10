@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.overview.mapper.textures;
 
 import com.google.gson.JsonArray;
@@ -18,23 +17,29 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import me.ferrybig.java.minecraft.overview.mapper.textures.variant.DefaultVariant;
+import me.ferrybig.java.minecraft.overview.mapper.textures.blockstate.MultiBlockState;
 import me.ferrybig.java.minecraft.overview.mapper.textures.blockstate.UnresolvedBlockState;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.Variant;
+import me.ferrybig.java.minecraft.overview.mapper.textures.variant.VariantModel;
+import me.ferrybig.java.minecraft.overview.mapper.textures.variant.specifier.SimpleVariantSpecifier;
+import me.ferrybig.java.minecraft.overview.mapper.textures.variant.specifier.VariantSpecifier;
 
 public class TextureParser {
+
 	private final Map<String, UnresolvedBlockState> variants = new HashMap<>();
 	private static final String BASE_PREFIX = "assets/minecraft/";
 	private static final String BLOCKSTATES_PREFIX = BASE_PREFIX + "blockstates/";
@@ -43,29 +48,31 @@ public class TextureParser {
 	private static final String BLOCKS_SUFFIX = ".json";
 
 	private static InputStream readFromZipList(List<ZipFile> files, String filename) throws IOException {
-		for(ZipFile file : files) {
+		for (ZipFile file : files) {
 			ZipEntry entry = file.getEntry(filename);
-			if(entry != null) {
+			if (entry != null) {
 				return file.getInputStream(entry);
 			}
 		}
 		throw new FileNotFoundException("File not found: " + filename);
 	}
+
 	private static Reader readTextFromZipList(List<ZipFile> files, String filename) throws IOException {
 		return new BufferedReader(new InputStreamReader(readFromZipList(files, filename), StandardCharsets.UTF_8));
 	}
 
 	private static Model readModel(List<ZipFile> files, Map<String, Model> modelCache, JsonParser parser, String modelName) throws IOException {
-		if(modelCache.containsKey(modelName)) {
+		if (modelCache.containsKey(modelName)) {
 			Model model = modelCache.get(modelName);
-			if(model == null) {
+			if (model == null) {
 				throw new IllegalStateException("Model " + modelName + " got requested while its still fetching");
 			}
 			return model;
 		}
+		System.err.println("Loading model block/" + modelName + "...");
 		modelCache.put(modelName, null);
 		JsonObject model;
-		try(Reader in = readTextFromZipList(files, BLOCKS_PREFIX + modelName + BLOCKS_SUFFIX)) {
+		try (Reader in = readTextFromZipList(files, BLOCKS_PREFIX + modelName + BLOCKS_SUFFIX)) {
 			model = parser.parse(in).getAsJsonObject();
 		}
 		final Model parent;
@@ -73,7 +80,7 @@ public class TextureParser {
 		final Map<String, String> textures = new HashMap<>();
 		{
 			JsonElement optionalParent = model.get("parent");
-			if(optionalParent != null) {
+			if (optionalParent != null) {
 				parent = readModel(files, modelCache, parser, optionalParent.getAsString());
 			} else {
 				parent = null;
@@ -81,10 +88,10 @@ public class TextureParser {
 		}
 		{
 			JsonArray optionalCubes = model.getAsJsonArray("elements");
-			if(optionalCubes != null) {
+			if (optionalCubes != null) {
 				cubes = new ArrayList<>(optionalCubes.size());
 				Iterator<JsonElement> iterator = optionalCubes.iterator();
-				while(iterator.hasNext()) {
+				while (iterator.hasNext()) {
 					JsonObject cube = iterator.next().getAsJsonObject();
 					final Vector3d from;
 					final Vector3d to;
@@ -106,6 +113,7 @@ public class TextureParser {
 					}
 					{
 						JsonObject faces = cube.getAsJsonObject("faces");
+						// TODO faces
 						down = null;
 						up = null;
 						north = null;
@@ -122,32 +130,34 @@ public class TextureParser {
 					cubes.add(new Cube(from, to, down, up, north, south, west, east, rotation, shade));
 				}
 			} else {
-				if(parent == null) {
+				if (parent == null) {
 					cubes = Collections.emptyList();
 				} else {
 					cubes = parent.getElements();
 				}
 			}
 		}
-		return new Model(cubes, textures, parent);
+		Model modelObj = new Model(cubes, textures, parent);
+		modelCache.put(modelName, modelObj);
+		return modelObj;
 	}
 
 	public void readAll(List<File> files) throws IOException {
 		List<ZipFile> zipFiles = new ArrayList<>(files.size());
 		try {
-			for(File file : files) {
+			for (File file : files) {
 				zipFiles.add(new ZipFile(file));
 			}
 			Set<String> materials = new HashSet<>();
-			for(ZipFile file : zipFiles) {
+			for (ZipFile file : zipFiles) {
 				Enumeration<? extends ZipEntry> list = file.entries();
-				while(list.hasMoreElements()) {
+				while (list.hasMoreElements()) {
 					ZipEntry entry = list.nextElement();
-					if(entry.isDirectory()) {
+					if (entry.isDirectory()) {
 						continue;
 					}
 					String name = entry.getName();
-					if(!name.startsWith(BLOCKSTATES_PREFIX)) {
+					if (!name.startsWith(BLOCKSTATES_PREFIX)) {
 						continue;
 					}
 					String materialName = name.substring(BLOCKSTATES_PREFIX.length(), name.length() - BLOCKSTATES_SUFFIX.length());
@@ -157,29 +167,75 @@ public class TextureParser {
 			// Discovery done, its now time to resolve all files
 			JsonParser parser = new JsonParser();
 			Map<String, Model> modelCache = new HashMap<>();
-			for(String material : materials) {
+			for (String material : materials) {
 				try {
-					JsonObject mainMaterial;
-					try(Reader materialInputStream = readTextFromZipList(zipFiles, BLOCKSTATES_PREFIX + material + BLOCKSTATES_SUFFIX)) {
-						mainMaterial = parser.parse(materialInputStream).getAsJsonObject();
+					System.err.println("-------------------------------------");
+					System.err.println("Loading blockstate" + material + "...");
+					final UnresolvedBlockState blockState;
+					{
+						JsonObject mainMaterial;
+						ArrayList<Map.Entry<VariantSpecifier, VariantModel>> list = new ArrayList<>();
+						try (Reader materialInputStream = readTextFromZipList(zipFiles, BLOCKSTATES_PREFIX + material + BLOCKSTATES_SUFFIX)) {
+							mainMaterial = parser.parse(materialInputStream).getAsJsonObject();
+						}
+						JsonElement variants = mainMaterial.get("variants");
+						JsonElement multiPart = mainMaterial.get("multipart");
+						if (variants != null && variants.isJsonObject()) {
+							JsonObject variantsMap = variants.getAsJsonObject();
+							Iterator<Map.Entry<String, JsonElement>> variantsIteratorvariants = variantsMap.entrySet().iterator();
+							while (variantsIteratorvariants.hasNext()) {
+								Map.Entry<String, JsonElement> next = variantsIteratorvariants.next();
+								// TODO support multi block variants
+								final JsonObject nextObj = (next.getValue().isJsonArray() ? next.getValue().getAsJsonArray().get(0) : next.getValue()).getAsJsonObject();
+								final VariantSpecifier key;
+								final VariantModel model;
+								{
+									if (next.getKey().isEmpty()) {
+										key = VariantSpecifier.EMPTY;
+									} else {
+										String[] split = next.getKey().split(",");
+										Map<String, String> states = new LinkedHashMap<>();
+										for (String keyPair : split) {
+											String[] keyPairSplit = keyPair.split("=");
+											if (keyPairSplit.length != 2) {
+												throw new IOException("Invalid keypair in '" + next.getKey() + "', = missing");
+											}
+											states.put(keyPairSplit[0], keyPairSplit[1]);
+										}
+										key = new SimpleVariantSpecifier(states);
+									}
+								}
+								final String modelName = nextObj.get("model").getAsString();
+								final double rotationX = nextObj.has("x") ? nextObj.get("x").getAsDouble() : 0;
+								final double rotationY = nextObj.has("x") ? nextObj.get("x").getAsDouble() : 0;
+								final boolean uvLock = nextObj.has("uvlock") ? nextObj.get("uvlock").getAsBoolean() : false;
+								model = new VariantModel(readModel(zipFiles, modelCache, parser, modelName), rotationX, rotationY, uvLock);
+								list.add(new AbstractMap.SimpleImmutableEntry<>(key, model));
+							}
+						} else if (multiPart != null && multiPart.isJsonArray()) {
+							JsonArray array = multiPart.getAsJsonArray();
+							list.ensureCapacity(array.size());
+							System.err.println("Skipping " + material + " multiblockstates not implemented yet");
+						} else {
+							throw new IOException("Unable to parse blockstate " + material + ": unknown format");
+						}
+						blockState = new MultiBlockState(list);
 					}
-				} catch(IOException e) {
+					this.variants.put(material, blockState);
+				} catch (IOException e) {
 					throw new IOException("Unable to parse material " + material, e);
 				}
 			}
 		} finally {
-			for(ZipFile file : zipFiles) {
+			for (ZipFile file : zipFiles) {
 				try {
 					file.close();
-				} catch(Exception e) {
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		}
 
-	}
-
-	private DefaultVariant parseTexture(JsonObject object, DefaultVariant parent) {
-		return null;
 	}
 
 	public UnresolvedBlockState getMaterial(String material) {
@@ -189,6 +245,5 @@ public class TextureParser {
 	public Variant getMaterial(String material, SortedMap<String, String> map) {
 		return this.getMaterial(material).resolve(map);
 	}
-
 
 }

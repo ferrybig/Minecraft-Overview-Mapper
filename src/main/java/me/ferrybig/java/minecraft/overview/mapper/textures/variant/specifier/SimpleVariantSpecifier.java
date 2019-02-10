@@ -3,18 +3,17 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
-package me.ferrybig.java.minecraft.overview.mapper.textures.variant;
+package me.ferrybig.java.minecraft.overview.mapper.textures.variant.specifier;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.SortedMap;
 
-public class VariantSpecifier {
+public class SimpleVariantSpecifier implements VariantSpecifier {
 
-	private final SortedMap<String, String> state;
+	private final Map<String, String> state;
 
-	public VariantSpecifier(SortedMap<String, String> state) {
+	public SimpleVariantSpecifier(Map<String, String> state) {
 		this.state = state;
 	}
 
@@ -36,20 +35,21 @@ public class VariantSpecifier {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		final VariantSpecifier other = (VariantSpecifier) obj;
+		final SimpleVariantSpecifier other = (SimpleVariantSpecifier) obj;
 		if (!Objects.equals(this.state, other.state)) {
 			return false;
 		}
 		return true;
 	}
 
-	public SortedMap<String, String> getState() {
+	public Map<String, String> getState() {
 		return state;
 	}
 
+	@Override
 	public boolean matches(Map<String, String> state) {
-		for (Map.Entry<String, String> entry : state.entrySet()) {
-			if (!Objects.equals(this.state.get(entry.getKey()), entry.getValue())) {
+		for (Map.Entry<String, String> entry : this.state.entrySet()) {
+			if (!Objects.equals(state.get(entry.getKey()), entry.getValue())) {
 				return false;
 			}
 		}

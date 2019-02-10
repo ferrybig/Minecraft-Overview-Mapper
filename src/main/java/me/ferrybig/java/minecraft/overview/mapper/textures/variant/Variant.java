@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.overview.mapper.textures.variant;
 
 import me.ferrybig.java.minecraft.overview.mapper.textures.blockstate.UnresolvedBlockState;
@@ -11,24 +10,23 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
 import java.util.stream.Stream;
-import me.ferrybig.java.minecraft.overview.mapper.textures.Model;
 
-public interface Variant extends Iterable<Model>, UnresolvedBlockState {
+public interface Variant extends Iterable<VariantModel>, UnresolvedBlockState {
+
 	public static Variant EMPTY = new Variant() {
 		@Override
-		public List<Model> getModels() {
+		public List<VariantModel> getModels() {
 			return Collections.emptyList();
 		}
 
 		@Override
-		public Iterator<Model> iterator() {
+		public Iterator<VariantModel> iterator() {
 			return Collections.emptyIterator();
 		}
 
 		@Override
-		public Stream<Model> stream() {
+		public Stream<VariantModel> stream() {
 			return Stream.empty();
 		}
 
@@ -38,9 +36,9 @@ public interface Variant extends Iterable<Model>, UnresolvedBlockState {
 		}
 	};
 
-	List<Model> getModels();
+	List<VariantModel> getModels();
 
-	default Stream<Model> stream() {
+	default Stream<VariantModel> stream() {
 		return getModels().stream();
 	}
 

@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.overview.mapper.textures.variant;
 
 import java.util.Iterator;
@@ -21,17 +20,17 @@ public class CombinedVariant implements Variant {
 	}
 
 	@Override
-	public Stream<Model> stream() {
+	public Stream<VariantModel> stream() {
 		return variants.stream().flatMap(Variant::stream);
 	}
 
 	@Override
-	public List<Model> getModels() {
+	public List<VariantModel> getModels() {
 		return this.stream().collect(Collectors.toList());
 	}
 
 	@Override
-	public Iterator<Model> iterator() {
+	public Iterator<VariantModel> iterator() {
 		return this.stream().iterator();
 	}
 
