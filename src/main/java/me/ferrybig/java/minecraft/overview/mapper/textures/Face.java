@@ -11,9 +11,9 @@ public class Face {
 
 	private final Vector2d point1;
 	private final Vector2d point2;
-	private final String texture;
+	private final Texture texture;
 
-	public Face(Vector2d point1, Vector2d point2, String texture) {
+	public Face(Vector2d point1, Vector2d point2, Texture texture) {
 		this.point1 = point1;
 		this.point2 = point2;
 		this.texture = texture;
@@ -27,7 +27,7 @@ public class Face {
 		return point2;
 	}
 
-	public String getTexture() {
+	public Texture getTexture() {
 		return texture;
 	}
 

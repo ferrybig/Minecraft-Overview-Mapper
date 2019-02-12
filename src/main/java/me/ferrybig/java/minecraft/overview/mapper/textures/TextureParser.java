@@ -61,6 +61,15 @@ public class TextureParser {
 		return new BufferedReader(new InputStreamReader(readFromZipList(files, filename), StandardCharsets.UTF_8));
 	}
 
+	private static Face readFace(JsonElement face) {
+		if(face == null) {
+			return null;
+		}
+		JsonObject obj = face.getAsJsonObject();
+		// todo uv, cullFace, rotation, tintindex
+		return new Face(null, null, new Texture(obj.get("texture").getAsString(), null));
+	}
+
 	private static Model readModel(List<ZipFile> files, Map<String, Model> modelCache, JsonParser parser, String modelName) throws IOException {
 		if (modelCache.containsKey(modelName)) {
 			Model model = modelCache.get(modelName);
@@ -113,13 +122,13 @@ public class TextureParser {
 					}
 					{
 						JsonObject faces = cube.getAsJsonObject("faces");
-						// TODO faces
-						down = null;
-						up = null;
-						north = null;
-						south = null;
-						west = null;
-						east = null;
+						// TODO faces { "texture": "#down", "cullface": "down" }
+						down = readFace(faces.get("down"));
+						up = readFace(faces.get("up"));
+						north = readFace(faces.get("north"));
+						south = readFace(faces.get("south"));
+						west = readFace(faces.get("west"));
+						east = readFace(faces.get("east"));
 					}
 					{
 						rotation = Rotation.NOOP;
@@ -134,6 +143,17 @@ public class TextureParser {
 					cubes = Collections.emptyList();
 				} else {
 					cubes = parent.getElements();
+				}
+			}
+		}
+		{
+			// TODO read textures
+			JsonObject optionalTextures = model.getAsJsonObject("textures");
+			if(optionalTextures != null) {
+				Iterator<Map.Entry<String, JsonElement>> iterator = optionalTextures.entrySet().iterator();
+				while(iterator.hasNext()) {
+					Map.Entry<String, JsonElement> next = iterator.next();
+					textures.put(next.getKey(), next.getValue().getAsString());
 				}
 			}
 		}

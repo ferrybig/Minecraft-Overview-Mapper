@@ -12,9 +12,13 @@ import java.util.Collections;
 
 public class TextureTest {
 
-	public static void main(String... args) throws IOException {
+	public static void main(String... args) throws IOException, InterruptedException {
 		TextureParser parser = new TextureParser();
 		parser.readAll(Arrays.asList(new File("C:\\Users\\Fernando\\AppData\\Roaming\\.minecraft\\versions\\1.13.2\\1.13.2.jar")));
+		Thread.sleep(100);
+		System.out.println("bedrock");
 		System.out.println(parser.getMaterial("bedrock").resolve(Collections.emptyMap()));
+		System.out.println("torch");
+		System.out.println(parser.getMaterial("torch").resolve(Collections.emptyMap()));
 	}
 }
