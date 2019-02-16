@@ -35,7 +35,7 @@ public class BiomeMap {
 		while ((str = paramBufferedReader.readLine()) != null) {
 			i++;
 			if ((!str.trim().isEmpty())
-					&& (!str.trim().startsWith("#"))) {
+				&& (!str.trim().startsWith("#"))) {
 				String[] arrayOfString = str.split("\t", 5);
 				if (arrayOfString.length < 4) {
 					System.err.println("Invalid biome map line at " + paramString + ":" + i + ": " + str);
@@ -80,7 +80,7 @@ public class BiomeMap {
 
 	public Biome getBiome(int paramInt) {
 		if ((paramInt >= 0) && (paramInt < this.biomes.length)
-				&& (this.biomes[paramInt] != null)) {
+			&& (this.biomes[paramInt] != null)) {
 			return this.biomes[paramInt];
 		}
 

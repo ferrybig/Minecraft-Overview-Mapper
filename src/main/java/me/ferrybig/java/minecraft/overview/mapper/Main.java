@@ -33,22 +33,22 @@ public class Main {
 		Options options = new Options();
 
 		Option input = Option
-				.builder("i")
-				.argName("target")
-				.hasArg()
-				.desc("Input file/folder")
-				.required()
-				.longOpt("input")
-				.build();
+			.builder("i")
+			.argName("target")
+			.hasArg()
+			.desc("Input file/folder")
+			.required()
+			.longOpt("input")
+			.build();
 
 		Option output = Option
-				.builder("o")
-				.argName("target")
-				.hasArg()
-				.desc("Output file/folder")
-				.required()
-				.longOpt("output")
-				.build();
+			.builder("o")
+			.argName("target")
+			.hasArg()
+			.desc("Output file/folder")
+			.required()
+			.longOpt("output")
+			.build();
 
 		options.addOption(input);
 		options.addOption(output);

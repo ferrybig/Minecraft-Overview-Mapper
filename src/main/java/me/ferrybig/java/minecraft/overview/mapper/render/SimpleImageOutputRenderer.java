@@ -38,9 +38,9 @@ public class SimpleImageOutputRenderer extends SimpleRenderer {
 			modZ += 16;
 		}
 		Path p = images
-				.resolve(Integer.toHexString(modX))
-				.resolve(Integer.toHexString(modZ))
-				.resolve(Integer.toHexString(x / 16) + "_" + Integer.toHexString(z / 16) + ".gif");
+			.resolve(Integer.toHexString(modX))
+			.resolve(Integer.toHexString(modZ))
+			.resolve(Integer.toHexString(x / 16) + "_" + Integer.toHexString(z / 16) + ".gif");
 		Files.createDirectories(p.getParent());
 		return p;
 	}

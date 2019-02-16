@@ -11,10 +11,7 @@ public interface VariantSpecifier {
 
 	public boolean matches(Map<String, String> state);
 
-	public static VariantSpecifier EMPTY = new VariantSpecifier() {
-		@Override
-		public boolean matches(Map<String, String> state) {
-			return true;
-		}
-	};
+	public static VariantSpecifier TRUE = (Map<String, String> state) -> true;
+
+	public static VariantSpecifier FALSE = (Map<String, String> state) -> false;
 }

@@ -17,7 +17,7 @@ import java.util.zip.GZIPInputStream;
 public abstract class SimpleRenderer implements RenderEngine {
 
 	private static final Pattern REGION_FILE_PATTERN
-			= Pattern.compile("^(?:[^/]*/)*r\\.(-?\\d+)\\.(-?\\d+)\\.mca$");
+		= Pattern.compile("^(?:[^/]*/)*r\\.(-?\\d+)\\.(-?\\d+)\\.mca$");
 	private final RegionRenderer renderer;
 
 	public SimpleRenderer(RegionRenderer renderer) {
@@ -29,8 +29,8 @@ public abstract class SimpleRenderer implements RenderEngine {
 		Matcher localMatcher;
 		if ((localMatcher = REGION_FILE_PATTERN.matcher(fileName)).matches()) {
 			addImage(renderer.renderFile(fileName, in),
-					Integer.parseInt((localMatcher.group(1))),
-					Integer.parseInt((localMatcher.group(2))));
+				Integer.parseInt((localMatcher.group(1))),
+				Integer.parseInt((localMatcher.group(2))));
 		} else if (fileName.endsWith("level.dat")) {
 			this.addLevelDat((CompoundTag) new NBTInputStream(new GZIPInputStream(in), false).readTag());
 		} else if (fileName.endsWith("mcr")) {
@@ -43,7 +43,7 @@ public abstract class SimpleRenderer implements RenderEngine {
 	protected abstract void addLevelDat(CompoundTag level) throws IOException;
 
 	protected abstract void addImage(BufferedImage tile, int x, int z)
-			throws IOException;
+		throws IOException;
 
 	@Override
 	public RenderEngine fork() {

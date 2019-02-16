@@ -12,5 +12,5 @@ import java.io.InputStream;
 public interface RegionRenderer {
 
 	public BufferedImage renderFile(String fileName, InputStream in)
-			throws IOException;
+		throws IOException;
 }

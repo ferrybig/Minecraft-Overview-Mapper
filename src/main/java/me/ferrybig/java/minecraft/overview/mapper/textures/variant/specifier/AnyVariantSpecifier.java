@@ -5,22 +5,28 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.textures.variant.specifier;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
-import java.util.SortedMap;
 
-public class SimpleVariantSpecifier implements VariantSpecifier {
+public class AnyVariantSpecifier implements VariantSpecifier {
 
-	private final Map<String, String> state;
+	private final String key;
+	private final String[] values;
 
-	public SimpleVariantSpecifier(Map<String, String> state) {
-		this.state = state;
+	public AnyVariantSpecifier(String key, String[] values) {
+		this.key = key;
+		this.values = values;
 	}
 
 	@Override
 	public boolean matches(Map<String, String> state) {
-		for (Map.Entry<String, String> entry : this.state.entrySet()) {
-			if (!Objects.equals(state.get(entry.getKey()), entry.getValue())) {
+		String value = state.get(key);
+		if (value == null) {
+			return false;
+		}
+		for (String target : values) {
+			if (!value.equals(target)) {
 				return false;
 			}
 		}
@@ -30,7 +36,8 @@ public class SimpleVariantSpecifier implements VariantSpecifier {
 	@Override
 	public int hashCode() {
 		int hash = 5;
-		hash = 37 * hash + Objects.hashCode(this.state);
+		hash = 53 * hash + Objects.hashCode(this.key);
+		hash = 53 * hash + Arrays.deepHashCode(this.values);
 		return hash;
 	}
 
@@ -45,8 +52,11 @@ public class SimpleVariantSpecifier implements VariantSpecifier {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		final SimpleVariantSpecifier other = (SimpleVariantSpecifier) obj;
-		if (!Objects.equals(this.state, other.state)) {
+		final AnyVariantSpecifier other = (AnyVariantSpecifier) obj;
+		if (!Objects.equals(this.key, other.key)) {
+			return false;
+		}
+		if (!Arrays.deepEquals(this.values, other.values)) {
 			return false;
 		}
 		return true;
@@ -54,11 +64,7 @@ public class SimpleVariantSpecifier implements VariantSpecifier {
 
 	@Override
 	public String toString() {
-		return "SimpleVariantSpecifier{" + "state=" + state + '}';
-	}
-
-	public Map<String, String> getState() {
-		return state;
+		return "AnyVariantSpecifier{" + "key=" + key + ", values=" + values + '}';
 	}
 
 }

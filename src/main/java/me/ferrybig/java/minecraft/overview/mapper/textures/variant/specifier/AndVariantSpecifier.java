@@ -5,22 +5,21 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.textures.variant.specifier;
 
+import java.util.Arrays;
 import java.util.Map;
-import java.util.Objects;
-import java.util.SortedMap;
 
-public class SimpleVariantSpecifier implements VariantSpecifier {
+public class AndVariantSpecifier implements VariantSpecifier {
 
-	private final Map<String, String> state;
+	private final VariantSpecifier[] specifiers;
 
-	public SimpleVariantSpecifier(Map<String, String> state) {
-		this.state = state;
+	public AndVariantSpecifier(VariantSpecifier[] specifiers) {
+		this.specifiers = specifiers;
 	}
 
 	@Override
 	public boolean matches(Map<String, String> state) {
-		for (Map.Entry<String, String> entry : this.state.entrySet()) {
-			if (!Objects.equals(state.get(entry.getKey()), entry.getValue())) {
+		for (VariantSpecifier specifier : specifiers) {
+			if (!specifier.matches(state)) {
 				return false;
 			}
 		}
@@ -29,8 +28,8 @@ public class SimpleVariantSpecifier implements VariantSpecifier {
 
 	@Override
 	public int hashCode() {
-		int hash = 5;
-		hash = 37 * hash + Objects.hashCode(this.state);
+		int hash = 7;
+		hash = 79 * hash + Arrays.deepHashCode(this.specifiers);
 		return hash;
 	}
 
@@ -45,8 +44,8 @@ public class SimpleVariantSpecifier implements VariantSpecifier {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		final SimpleVariantSpecifier other = (SimpleVariantSpecifier) obj;
-		if (!Objects.equals(this.state, other.state)) {
+		final AndVariantSpecifier other = (AndVariantSpecifier) obj;
+		if (!Arrays.deepEquals(this.specifiers, other.specifiers)) {
 			return false;
 		}
 		return true;
@@ -54,11 +53,7 @@ public class SimpleVariantSpecifier implements VariantSpecifier {
 
 	@Override
 	public String toString() {
-		return "SimpleVariantSpecifier{" + "state=" + state + '}';
-	}
-
-	public Map<String, String> getState() {
-		return state;
+		return "CombinedVariantSpecifier{" + "specifiers=" + specifiers + '}';
 	}
 
 }

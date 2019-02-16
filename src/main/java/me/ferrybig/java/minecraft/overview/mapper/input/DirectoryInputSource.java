@@ -26,7 +26,7 @@ public class DirectoryInputSource implements InputSource {
 		files.add(new File(root, "level.dat"));
 		files.addAll(Arrays.asList(new File(root, "region").listFiles()));
 		return files.stream().map(f
-				-> PreparedFile.of(f.getName(), () -> new FileInputStream(f))
+			-> PreparedFile.of(f.getName(), () -> new FileInputStream(f))
 		);
 	}
 

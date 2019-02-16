@@ -57,7 +57,7 @@ public class DefaultImageRenderer implements RegionRenderer {
 	public BufferedImage renderFile(String fileName, InputStream input) throws IOException {
 		ByteCountingDataInputStream in = new ByteCountingDataInputStream(new BufferedInputStream(input, SECTOR_BYTES * 2));
 		PriorityQueue<Integer> chunkIndexes = new PriorityQueue<>(
-				new Comparator<Integer>() {
+			new Comparator<Integer>() {
 
 			@Override
 			public int compare(Integer o1, Integer o2) {
@@ -118,7 +118,7 @@ public class DefaultImageRenderer implements RegionRenderer {
 					throw new IOException("Invalid format: " + version);
 			}
 			globalTag = (CompoundTag) new NBTInputStream(
-					new DataInputStream(chunkStream), false).readTag();
+				new DataInputStream(chunkStream), false).readTag();
 			levelTag = (CompoundTag) globalTag.getValue().get("Level");
 			globalX = ((IntTag) levelTag.getValue().get("xPos")).getValue();
 			globalZ = ((IntTag) levelTag.getValue().get("zPos")).getValue();
@@ -127,10 +127,10 @@ public class DefaultImageRenderer implements RegionRenderer {
 			regionZ = calculateChunkPos(globalZ);
 
 			loadChunkData(levelTag,
-					blockId, blockData, sectionsUsedList, biomes);
+				blockId, blockData, sectionsUsedList, biomes);
 			preRenderChunk(
-					blockId, blockData, sectionsUsedList, biomes, blockMap,
-					biomeMap, regionX, regionZ, imageColorArray, imageShadeArray);
+				blockId, blockData, sectionsUsedList, biomes, blockMap,
+				biomeMap, regionX, regionZ, imageColorArray, imageShadeArray);
 		}
 		demultiplyAlpha(imageColorArray);
 		shade(imageShadeArray, imageColorArray);
@@ -187,9 +187,9 @@ public class DefaultImageRenderer implements RegionRenderer {
 	}
 
 	private static void preRenderChunk(
-			short[][] sectionBlockIds, byte[][] sectionBlockData,
-			boolean[] usedSections, byte[] biomeIds, BlockMap blockMap,
-			BiomeMap biomes, int cx, int cz, int[] colors, short[] heights) {
+		short[][] sectionBlockIds, byte[][] sectionBlockData,
+		boolean[] usedSections, byte[] biomeIds, BlockMap blockMap,
+		BiomeMap biomes, int cx, int cz, int[] colors, short[] heights) {
 		/**
 		 * Color of 16 air blocks stacked
 		 */
