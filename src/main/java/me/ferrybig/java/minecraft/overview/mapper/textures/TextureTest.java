@@ -29,14 +29,16 @@ public class TextureTest {
 		Variant bedrock = parser.getMaterial("bedrock").resolve(Collections.emptyMap());
 		System.err.println("bedrock");
 		System.err.println(bedrock);
-		renderTestNorth(parser, bedrock, "bedrockNorth.png");
-		renderTestUp(parser, bedrock, "bedrockUp.png");
+		renderTestNorth(parser, bedrock, "renderTest/bedrockNorth.png");
+		renderTestUp(parser, bedrock, "renderTest/bedrockUp.png");
 
 		Variant torch = parser.getMaterial("torch").resolve(Collections.emptyMap());
+		System.err.println("----------------------------------");
+		System.err.println("----------------------------------");
 		System.err.println("torch");
 		System.err.println(torch);
-		renderTestNorth(parser, torch, "torchNorth.png");
-		renderTestUp(parser, torch, "torchUp.png");
+		renderTestNorth(parser, torch, "renderTest/torchNorth.png");
+		renderTestUp(parser, torch, "renderTest/torchUp.png");
 
 		Map<String, String> state = new HashMap<>();
 		state.put("east", "true");
@@ -45,10 +47,12 @@ public class TextureTest {
 		state.put("south", "true");
 		state.put("waterlogged", "false");
 		Variant oakFence = parser.getMaterial("oak_fence").resolve(state);
+		System.err.println("----------------------------------");
+		System.err.println("----------------------------------");
 		System.err.println("oak_fence");
 		System.err.println(oakFence);
-		renderTestNorth(parser, oakFence, "oakFenceNorth.png");
-		renderTestUp(parser, oakFence, "oakFenceUp.png");
+		renderTestNorth(parser, oakFence, "renderTest/oakFenceNorth.png");
+		renderTestUp(parser, oakFence, "renderTest/oakFenceUp.png");
 
 	}
 
