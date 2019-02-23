@@ -213,7 +213,7 @@ public class TextureParser {
 						rotation = Rotation.NOOP;
 					}
 					{
-						shade = false;
+						shade = cube.has("shade") ? cube.get("shade").getAsBoolean() : false;
 					}
 					cubes.add(new Cube(from, to, down, up, north, south, west, east, rotation, shade));
 				}
