@@ -5,19 +5,24 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import me.ferrybig.java.minecraft.overview.mapper.input.DirectoryInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.InputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.TarGzInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap;
 import me.ferrybig.java.minecraft.overview.mapper.render.BlockMap;
 import me.ferrybig.java.minecraft.overview.mapper.render.DefaultImageRenderer;
+import me.ferrybig.java.minecraft.overview.mapper.render.FlatImageRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.RegionRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.RenderEngine;
 import me.ferrybig.java.minecraft.overview.mapper.render.SimpleHTMLOutputRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.SimpleImageOutputRenderer;
+import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache;
+import me.ferrybig.java.minecraft.overview.mapper.textures.TextureParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -53,10 +58,10 @@ public class Main {
 		options.addOption(input);
 		options.addOption(output);
 
-		CommandLineParser parser = new DefaultParser();
+		CommandLineParser cmdParser = new DefaultParser();
 		CommandLine cmd;
 		try {
-			cmd = parser.parse(options, args);
+			cmd = cmdParser.parse(options, args);
 		} catch (org.apache.commons.cli.MissingOptionException missing) {
 			System.err.println("Missing: " + missing.getMessage());
 			HelpFormatter formatter = new HelpFormatter();
@@ -71,7 +76,10 @@ public class Main {
 		System.err.println("In: " + in.toAbsolutePath());
 		System.err.println("Out: " + out.toAbsolutePath());
 
-		RegionRenderer rend = new DefaultImageRenderer(BlockMap.loadDefault(), BiomeMap.loadDefault());
+		TextureParser parser = new TextureParser();
+		parser.readAll(Arrays.asList(new File("C:\\Users\\Fernando\\AppData\\Roaming\\.minecraft\\versions\\1.13.2\\1.13.2.jar")));
+
+		RegionRenderer rend = new FlatImageRenderer(new TextureCache(parser), BiomeMap.loadDefault());
 
 		InputSource inputSource;
 		if (in.toAbsolutePath().toString().endsWith(".tar.gz")) {

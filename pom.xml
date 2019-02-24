@@ -18,11 +18,6 @@
 	</distributionManagement>
 	<dependencies>
 		<dependency>
-			<groupId>com.flowpowered</groupId>
-			<artifactId>flow-nbt</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
 			<version>1.11</version>
@@ -43,6 +38,11 @@
 			<groupId>com.google.code.findbugs</groupId>
 			<artifactId>jsr305</artifactId>
 			<version>3.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>21.0</version>
 		</dependency>
 	</dependencies>
 	<build>

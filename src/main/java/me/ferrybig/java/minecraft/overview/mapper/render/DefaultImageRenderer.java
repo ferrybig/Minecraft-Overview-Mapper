@@ -143,6 +143,7 @@ public class DefaultImageRenderer implements RegionRenderer {
 	}
 	private static final int KIBIBYTE = 1024;
 
+	@SuppressWarnings("unchecked")
 	private static void loadChunkData(CompoundTag levelTag, short[][] sectionBlockIds, byte[][] sectionBlockData, boolean[] sectionsUsed, byte[] biomeIds) {
 		for (int i = 0; i < MAX_CHUNK_SECTIONS; i++) {
 			sectionsUsed[i] = false;

@@ -413,8 +413,15 @@ public class TextureParser {
 		return variants.get(material);
 	}
 
-	public Variant getMaterial(String material, SortedMap<String, String> map) {
-		return this.getMaterial(material).resolve(map);
+	public Variant getMaterial(String material, Map<String, String> map) {
+		if(material.startsWith("minecraft:")) {
+			material = material.substring("minecraft:".length());
+		}
+		final UnresolvedBlockState unresolvedMaterial = this.getMaterial(material);
+		if(unresolvedMaterial == null) {
+			throw new IllegalArgumentException("Material not found: " + material);
+		}
+		return unresolvedMaterial.resolve(map);
 	}
 
 	public BufferedImage getTexture(Model model, String textureName) {
