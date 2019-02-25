@@ -40,6 +40,14 @@ public class TextureTest {
 		renderTestNorth(parser, torch, "renderTest/torchNorth.png");
 		renderTestUp(parser, torch, "renderTest/torchUp.png");
 
+		Variant water = parser.getMaterial("water").resolve(Collections.emptyMap());
+		System.err.println("----------------------------------");
+		System.err.println("----------------------------------");
+		System.err.println("water");
+		System.err.println(water);
+		renderTestNorth(parser, water, "renderTest/waterNorth.png");
+		renderTestUp(parser, water, "renderTest/waterUp.png");
+
 		Map<String, String> state = new HashMap<>();
 		state.put("east", "true");
 		state.put("west", "true");

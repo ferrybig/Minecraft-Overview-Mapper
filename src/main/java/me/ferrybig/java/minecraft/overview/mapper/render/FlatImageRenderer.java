@@ -59,7 +59,8 @@ public class FlatImageRenderer implements RegionRenderer {
 	private static final int SECTOR_INTS = SECTOR_BYTES / 4;
 
 	private static final int SHADE_CUTOFF = 32;
-	private final static int MAX_CHUNK_SECTIONS = 16;
+	public static final int CHUNK_SECTION_SIZE = 16;
+	private final static int MAX_CHUNK_SECTIONS = CHUNK_SECTION_SIZE;
 	private final TextureCache textures;
 	private final ChunkSection emptyChunkSection;
 
@@ -71,7 +72,7 @@ public class FlatImageRenderer implements RegionRenderer {
 		try {
 			this.emptyChunkSection = new ChunkSection(
 				1,
-				new long[64],
+				new long[LONG_SIZE],
 				new TextureMapper[]{textures.get("air", Collections.emptyMap())},
 				true
 			);
@@ -106,7 +107,7 @@ public class FlatImageRenderer implements RegionRenderer {
 		int globalX;
 		int globalZ;
 		long lastUpdate;
-		BufferedImage regionDetailImage = new BufferedImage(512 * 16, 512 * 16, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage regionDetailImage = new BufferedImage(512 * CHUNK_SECTION_SIZE, 512 * CHUNK_SECTION_SIZE, BufferedImage.TYPE_INT_ARGB);
 		Integer lowestChunkIndex;
 		CompoundTag globalTag;
 		CompoundTag levelTag;
@@ -178,9 +179,9 @@ public class FlatImageRenderer implements RegionRenderer {
 		}
 		Tag<?> biomesTag = levelTag.getValue().get("Biomes");
 		if (biomesTag != null) {
-			System.arraycopy(((IntArrayTag) biomesTag).getValue(), 0, biomeIds, 0, 16 * 16);
+			System.arraycopy(((IntArrayTag) biomesTag).getValue(), 0, biomeIds, 0, CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE);
 		} else {
-			for (int i = 0; i < 16 * 16; i++) {
+			for (int i = 0; i < CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE; i++) {
 				biomeIds[i] = -1;
 			}
 		}
@@ -199,10 +200,10 @@ public class FlatImageRenderer implements RegionRenderer {
 			@SuppressWarnings("MismatchedReadAndWriteOfArray")
 			byte[] destSectionData = sectionBlockData[sectionIndex];
 			sectionsUsed[sectionIndex] = true;
-			for (int y = 0; y < 16; ++y) {
-				for (int z = 0; z < 16; ++z) {
-					for (int x = 0; x < 16; ++x) {
-						int index = y * 256 + z * 16 + x;
+			for (int y = 0; y < CHUNK_SECTION_SIZE; ++y) {
+				for (int z = 0; z < CHUNK_SECTION_SIZE; ++z) {
+					for (int x = 0; x < CHUNK_SECTION_SIZE; ++x) {
+						int index = y * 256 + z * CHUNK_SECTION_SIZE + x;
 						short blockType = (short) (blockIdsLow[index] & 0xFF);
 						if (blockAdd != null) {
 							blockType |= getBlockFromNybbleArray(blockAdd, index) << 8;
@@ -222,7 +223,7 @@ public class FlatImageRenderer implements RegionRenderer {
 		/**
 		 * Color of 16 air blocks stacked
 		 */
-		final int air16Color = Color.overlay(0, getColor(blockMap, biomes, 0, 0, 0), 16);
+		final int air16Color = Color.overlay(0, getColor(blockMap, biomes, 0, 0, 0), CHUNK_SECTION_SIZE);
 		int maxSectionCount = MAX_CHUNK_SECTIONS;
 		for (int s = 0; s < maxSectionCount; ++s) {
 			if (usedSections[s]) {
@@ -231,18 +232,18 @@ public class FlatImageRenderer implements RegionRenderer {
 		}
 
 		//resetInterval();
-		for (int z = 0; z < 16; ++z) {
-			for (int x = 0; x < 16; ++x) {
+		for (int z = 0; z < CHUNK_SECTION_SIZE; ++z) {
+			for (int x = 0; x < CHUNK_SECTION_SIZE; ++x) {
 				int pixelColor = 0;
 				short pixelHeight = 0;
-				int biomeId = biomeIds[z * 16 + x] & 0xFF;
+				int biomeId = biomeIds[z * CHUNK_SECTION_SIZE + x] & 0xFF;
 
 				for (int s = 0; s < maxSectionCount; ++s) {
 					if (usedSections[s]) {
 						short[] blockIds = sectionBlockIds[s];
 						byte[] blockData = sectionBlockData[s];
 
-						for (int idx = z * 16 + x, y = 0, absY = s * 16; y < 16; ++y, idx += 256, ++absY) {
+						for (int idx = z * CHUNK_SECTION_SIZE + x, y = 0, absY = s * CHUNK_SECTION_SIZE; y < CHUNK_SECTION_SIZE; ++y, idx += 256, ++absY) {
 							final short blockId = blockIds[idx];
 							final byte blockDatum = blockData[idx];
 							int blockColor = getColor(blockMap, biomes, blockId & 0xFFFF, blockDatum, biomeId);
@@ -256,7 +257,7 @@ public class FlatImageRenderer implements RegionRenderer {
 					}
 				}
 
-				final int dIdx = 512 * (cz * 16 + z) + 16 * cx + x;
+				final int dIdx = 512 * (cz * CHUNK_SECTION_SIZE + z) + CHUNK_SECTION_SIZE * cx + x;
 				colors[dIdx] = pixelColor;
 				heights[dIdx] = pixelHeight;
 			}
@@ -301,11 +302,11 @@ public class FlatImageRenderer implements RegionRenderer {
 						totalAdjustment = -10.0F;
 					}
 
-					totalAdjustment = (float) (totalAdjustment + (imageColorArray[index] - 64) / 7.0D);
+					totalAdjustment = (float) (totalAdjustment + (imageColorArray[index] - LONG_SIZE) / 7.0D);
 
 					imageShadeArray[index] = Color.shade(imageShadeArray[index], (int) (totalAdjustment * 8.0F));
 				}
-				
+
 			}
 		}
 	}
@@ -349,69 +350,69 @@ public class FlatImageRenderer implements RegionRenderer {
 	}
 
 	private void renderChunk(CompoundTag levelTag, int localX, int localZ, Graphics2D g2) throws ExecutionException {
-		ListTag<?> sections = (ListTag<?>)levelTag.getValue().get("Sections");
-		ChunkSection[] chunkSections = new ChunkSection[16];
+		ListTag<?> sections = (ListTag<?>) levelTag.getValue().get("Sections");
+		ChunkSection[] chunkSections = new ChunkSection[CHUNK_SECTION_SIZE];
 		Arrays.fill(chunkSections, this.emptyChunkSection);
 		int maxY = 0;
-		for(Object section : sections.getValue()) {
-			CompoundMap root = ((CompoundTag)section).getValue();
-			List<?> pallete = ((ListTag<?>)root.get("Palette")).getValue();
+		for (Object section : sections.getValue()) {
+			CompoundMap root = ((CompoundTag) section).getValue();
+			List<?> pallete = ((ListTag<?>) root.get("Palette")).getValue();
 			TextureMapper[] parsedPallete = new TextureMapper[pallete.size()];
-			long[] blockStates = ((LongArrayTag)root.get("BlockStates")).getValue();
+			long[] blockStates = ((LongArrayTag) root.get("BlockStates")).getValue();
 
-			for(int i = 0; i < pallete.size(); i++) {
-				CompoundMap palleteRoot = ((CompoundTag)pallete.get(i)).getValue();
-				String blockId = ((StringTag)palleteRoot.get("Name")).getValue();
+			for (int i = 0; i < pallete.size(); i++) {
+				CompoundMap palleteRoot = ((CompoundTag) pallete.get(i)).getValue();
+				String blockId = ((StringTag) palleteRoot.get("Name")).getValue();
 				Map<String, String> properties;
-				if(palleteRoot.containsKey("Properties")) {
+				if (palleteRoot.containsKey("Properties")) {
 					properties = new LinkedHashMap<>();
-					CompoundMap map = ((CompoundTag)palleteRoot.get("Properties")).getValue();
+					CompoundMap map = ((CompoundTag) palleteRoot.get("Properties")).getValue();
 					Iterator<Map.Entry<String, Tag<?>>> iterator = map.entrySet().iterator();
-					while(iterator.hasNext()) {
+					while (iterator.hasNext()) {
 						Map.Entry<String, Tag<?>> next = iterator.next();
-						properties.put(next.getKey(), ((StringTag)next.getValue()).getValue());
+						properties.put(next.getKey(), ((StringTag) next.getValue()).getValue());
 					}
 				} else {
 					properties = Collections.emptyMap();
 				}
 				parsedPallete[i] = this.textures.get(blockId, properties);
 			}
-			int y = ((ByteTag)root.get("Y")).getValue();
-			maxY = Math.max(maxY, y * 16 + 15);
+			int y = ((ByteTag) root.get("Y")).getValue();
+			maxY = Math.max(maxY, y * CHUNK_SECTION_SIZE + 15);
 			chunkSections[y] = new ChunkSection(
-				blockStates.length * 64 / (16 * 16 * 16),
+				blockStates.length * LONG_SIZE / (CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE),
 				blockStates,
 				parsedPallete,
 				false
 			);
 		}
 		//System.out.println("CHunk at " + localX + "," + localZ + " has max height " + maxY);
-		for(int x = 0; x < 16; x++) {
-			for(int z = 0; z < 16; z++) {
+		for (int x = 0; x < CHUNK_SECTION_SIZE; x++) {
+			for (int z = 0; z < CHUNK_SECTION_SIZE; z++) {
 				int y = maxY;
-				for(;y > 0; y--) {
-					int sectionId = y / 16;
-					int blockY = y % 16;
+				for (; y > 0; y--) {
+					int sectionId = y / CHUNK_SECTION_SIZE;
+					int blockY = y % CHUNK_SECTION_SIZE;
 					ChunkSection s = chunkSections[sectionId];
-					if(s.isEmpty()) {
+					if (s.isEmpty()) {
 						continue;
 					}
 					TextureMapper block = s.getBlock(x, blockY, z);
 					//System.out.println("Block at " + x + ',' + y + ',' + z + " is " + block.getBlock() + " and is " + block.isOpaque());
-					if(block.isOpaque()) {
+					if (block.isOpaque()) {
 						break;
 					}
 				}
 				//System.out.println("Blockcolumn at " + x + "," + z + " has min height " + y);
-				for(;y <= maxY; y++) {
-					int sectionId = y / 16;
-					int blockY = y % 16;
+				for (; y <= maxY; y++) {
+					int sectionId = y / CHUNK_SECTION_SIZE;
+					int blockY = y % CHUNK_SECTION_SIZE;
 					ChunkSection s = chunkSections[sectionId];
-					if(s.isEmpty()) {
+					if (s.isEmpty()) {
 						continue;
 					}
 					TextureMapper block = s.getBlock(x, blockY, z);
-					block.apply(g2, x + localX * 16, z + localZ * 16);
+					block.apply(g2, x + localX * CHUNK_SECTION_SIZE, z + localZ * CHUNK_SECTION_SIZE);
 				}
 			}
 		}
@@ -431,6 +432,7 @@ public class FlatImageRenderer implements RegionRenderer {
 	}
 
 	private class ChunkSection {
+
 		private final int blockPartSize;
 		private final long blockMask;
 		private final long[] blockStates;
@@ -438,8 +440,12 @@ public class FlatImageRenderer implements RegionRenderer {
 		private final TextureMapper[] states;
 
 		public ChunkSection(int blockPartSize, long[] blockStates, TextureMapper[] states, boolean empty) {
-			if(blockStates.length * 64 != blockPartSize * 16 * 16 * 16) {
-				throw new IllegalArgumentException("blockStates length does not match expected: " + blockStates.length * 64 + " vs " + blockPartSize * 16 * 16 * 16);
+			if (blockStates.length * LONG_SIZE != blockPartSize * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE) {
+				throw new IllegalArgumentException("blockStates length does not match expected: "
+					+ blockStates.length * LONG_SIZE
+					+ " vs "
+					+ blockPartSize * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE
+				);
 			}
 			this.blockPartSize = blockPartSize;
 			this.blockMask = (1l << blockPartSize) - 1;
@@ -449,28 +455,31 @@ public class FlatImageRenderer implements RegionRenderer {
 		}
 
 		public TextureMapper getBlock(int x, int y, int z) {
-			Preconditions.checkElementIndex(x, 16, "x");
-			Preconditions.checkElementIndex(y, 16, "y");
-			Preconditions.checkElementIndex(z, 16, "z");
-			int blockPos = y*16*16 + z*16 + x;
-			int bitOffset = blockPos* this.blockPartSize;
-			int arrayIndex = bitOffset / 64;
+			Preconditions.checkElementIndex(x, CHUNK_SECTION_SIZE, "x");
+			Preconditions.checkElementIndex(y, CHUNK_SECTION_SIZE, "y");
+			Preconditions.checkElementIndex(z, CHUNK_SECTION_SIZE, "z");
+			int blockPos = y * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE + z * CHUNK_SECTION_SIZE + x;
+			int bitOffset = blockPos * this.blockPartSize;
+			int arrayIndex = bitOffset / LONG_SIZE;
 			long arrayValue = this.blockStates[arrayIndex];
-			int shiftOffset = bitOffset - (arrayIndex * 64);
+			int shiftOffset = bitOffset - (arrayIndex * LONG_SIZE);
 			long movedValue = arrayValue >>> shiftOffset;
 			long maskedValue = movedValue & this.blockMask;
-			if(shiftOffset + this.blockPartSize > 64) {
-				// We overflown during the shifting, TODO code this
-				System.out.println("We overflown during the shifting, TODO code this: " + x + "," + y + "," + z);
+			if (shiftOffset + this.blockPartSize > LONG_SIZE) {
+				int missingMaskSize = shiftOffset + this.blockPartSize - LONG_SIZE;
+				int actualReadMaskSize = this.blockPartSize - missingMaskSize;
+				long missingPart = this.blockStates[arrayIndex + 1];
+				long missingMask = (1l << missingMaskSize) - 1;
+				maskedValue |= (missingPart & missingMask) << actualReadMaskSize;
 			}
-			if(maskedValue >= states.length) {
+			if (maskedValue >= states.length) {
 				throw new IllegalArgumentException("Calculated block id is larger than the pallete allows: " + maskedValue);
 			}
-			if(maskedValue < 0) {
+			if (maskedValue < 0) {
 				throw new IllegalArgumentException("Calculated block id is smaller than the pallete allows: " + maskedValue);
 			}
-			TextureMapper texture = this.states[(int)maskedValue];
-			if(texture == null) {
+			TextureMapper texture = this.states[(int) maskedValue];
+			if (texture == null) {
 				throw new IllegalArgumentException("Block " + maskedValue + " is null in the pallete");
 			}
 			return texture;
@@ -480,6 +489,6 @@ public class FlatImageRenderer implements RegionRenderer {
 			return empty;
 		}
 
-
 	}
+	public static final int LONG_SIZE = 64;
 }

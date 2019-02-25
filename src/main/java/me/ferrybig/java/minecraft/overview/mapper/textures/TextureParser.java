@@ -38,6 +38,7 @@ import javax.imageio.ImageIO;
 import me.ferrybig.java.minecraft.overview.mapper.textures.blockstate.MultiBlockState;
 import me.ferrybig.java.minecraft.overview.mapper.textures.blockstate.UnresolvedBlockState;
 import me.ferrybig.java.minecraft.overview.mapper.textures.io.FileLoader;
+import me.ferrybig.java.minecraft.overview.mapper.textures.variant.SimpleVariant;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.Variant;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.VariantModel;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.specifier.AndVariantSpecifier;
@@ -65,8 +66,8 @@ public class TextureParser {
 		Graphics2D g2 = IMAGE_NOT_FOUND.createGraphics();
 		try {
 			g2.setColor(Color.red);
-			g2.drawRect(0, 0, 8, 8);
-			g2.drawRect(8, 8, 8, 8);
+			g2.fillRect(0, 0, 8, 8);
+			g2.fillRect(8, 8, 8, 8);
 		} finally {
 			g2.dispose();
 		}
@@ -77,8 +78,8 @@ public class TextureParser {
 		Graphics2D g2 = IMAGE_ERROR.createGraphics();
 		try {
 			g2.setColor(Color.yellow);
-			g2.drawRect(0, 0, 8, 8);
-			g2.drawRect(8, 8, 8, 8);
+			g2.fillRect(0, 0, 8, 8);
+			g2.fillRect(8, 8, 8, 8);
 		} finally {
 			g2.dispose();
 		}
@@ -226,7 +227,6 @@ public class TextureParser {
 			}
 		}
 		{
-			// TODO read textures
 			JsonObject optionalTextures = model.getAsJsonObject("textures");
 			if (optionalTextures != null) {
 				Iterator<Map.Entry<String, JsonElement>> iterator = optionalTextures.entrySet().iterator();
@@ -309,6 +309,25 @@ public class TextureParser {
 			// Discovery done, its now time to resolve all files
 			Map<String, UnresolvedBlockState> blockstates = new HashMap<>();
 			Map<String, Model> modelCache = new HashMap<>();
+			// Default blocks internally handles by mc
+			{
+				modelCache.put("block/water", new Model(
+					Collections.singletonList(
+						new Cube(
+							new Vector3d(0, 0, 0), new Vector3d(16, 14, 16),
+							null, new Face(
+								new Vector2d(0, 0), new Vector2d(16, 16),
+								"#water",
+								null,
+								0,
+								0,
+								true
+							),
+							null, null, null, null, Rotation.NOOP
+						)
+					), Collections.singletonMap("water", "block/water_still"), null
+				));
+			}
 			{
 				JsonParser parser = new JsonParser();
 				for (String material : materials) {
