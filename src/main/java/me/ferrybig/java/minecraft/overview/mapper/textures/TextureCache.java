@@ -10,18 +10,24 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import javax.imageio.ImageIO;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.Variant;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.VariantModel;
 
 public class TextureCache {
 
-	private final int IMAGE_SIZE = 16;
+	private static final int IMAGE_SIZE = 16;
+	private static final int IMAGE_SIZE_SQUARED = IMAGE_SIZE * IMAGE_SIZE;
 
 	private final LoadingCache<TextureKey, TextureMapper> cache;
 
@@ -30,7 +36,7 @@ public class TextureCache {
 			.maximumSize(1000)
 			.build(new CacheLoader<TextureKey, TextureMapper>() {
 				@Override
-				public TextureMapper load(TextureKey key) {
+				public TextureMapper load(TextureKey key) throws IOException {
 					Variant variant = parser.getMaterial(key.getBlock(), key.getState());
 					BufferedImage image = new BufferedImage(IMAGE_SIZE, IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
 					Graphics2D g2 = image.createGraphics();
@@ -64,17 +70,31 @@ public class TextureCache {
 						g2.dispose();
 					}
 					int transparantPixels = 0;
+					int fullyTransparantPixels = 0;
 					int[] pixels = image.getRGB(0, 0, IMAGE_SIZE, IMAGE_SIZE, null, 0, IMAGE_SIZE);
 					for (int pixel : pixels) {
-						if ((pixel >> 24) == 0) {
+						int aplha = (pixel >>> 24);
+						if (aplha != 0xff) {
 							transparantPixels++;
+							if (aplha == 0) {
+								fullyTransparantPixels++;
+							}
 						}
 					}
-					System.out.println("Block " + key.getBlock() + " is transparant? " + (transparantPixels != 0));
-					if (transparantPixels == IMAGE_SIZE * IMAGE_SIZE) {
+					assert transparantPixels <= IMAGE_SIZE_SQUARED;
+					assert fullyTransparantPixels <= transparantPixels;
+					assert 0 <= fullyTransparantPixels;
+					boolean isFullyTransparant = fullyTransparantPixels == IMAGE_SIZE_SQUARED;
+					boolean containsTransparancy = transparantPixels != 0;
+					System.out.println("Block " + key.getBlock() + " is transparant? " + containsTransparancy + " " + isFullyTransparant);
+
+					try (OutputStream out = Files.newOutputStream(Paths.get("renderTest/" + key.getBlock().replace(":", "_") + ".png"))) {
+						ImageIO.write(image, "png", out);
+					}
+					if (isFullyTransparant) {
 						return EmptyTextureMapper.INSTANCE;
 					} else {
-						return new DefaultTextureMapper(image, transparantPixels == 0, key.getBlock());
+						return new DefaultTextureMapper(image, containsTransparancy, key.getBlock());
 					}
 				}
 
