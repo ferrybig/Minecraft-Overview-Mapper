@@ -40,7 +40,7 @@ public class SimpleImageOutputRenderer extends SimpleRenderer {
 		Path p = images
 			.resolve(Integer.toHexString(modX))
 			.resolve(Integer.toHexString(modZ))
-			.resolve(Integer.toHexString(x / 16) + "_" + Integer.toHexString(z / 16) + ".gif");
+			.resolve(Integer.toHexString(x / 16) + "_" + Integer.toHexString(z / 16) + ".png");
 		Files.createDirectories(p.getParent());
 		return p;
 	}
@@ -58,7 +58,7 @@ public class SimpleImageOutputRenderer extends SimpleRenderer {
 	@Override
 	protected void addImage(BufferedImage tile, int x, int z) throws IOException {
 		try (OutputStream out = Files.newOutputStream(getImageLocation(x, z))) {
-			ImageIO.write(tile, "gif", out);
+			ImageIO.write(tile, "png", out);
 		}
 	}
 
