@@ -19,7 +19,9 @@ import com.flowpowered.nbt.StringTag;
 import com.flowpowered.nbt.Tag;
 import com.flowpowered.nbt.stream.NBTInputStream;
 import com.google.common.base.Preconditions;
+import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -55,6 +57,7 @@ public class FlatImageRenderer implements RegionRenderer {
 	private static final int VERSION_GZIP = 1;
 	private static final int VERSION_DEFLATE = 2;
 
+	private static final int KIBIBYTE = 1024;
 	private static final int SECTOR_BYTES = 4096;
 	private static final int SECTOR_INTS = SECTOR_BYTES / 4;
 
@@ -152,7 +155,7 @@ public class FlatImageRenderer implements RegionRenderer {
 
 				try {
 					System.out.println("Render chunk: " + regionX + "," + regionZ);
-					renderChunk(levelTag, regionX, regionZ, g2);
+					renderChunk(levelTag, regionX, regionZ, g2, regionDetailImage);
 				} catch (ExecutionException ex) {
 					throw new IOException(ex);
 				}
@@ -169,105 +172,6 @@ public class FlatImageRenderer implements RegionRenderer {
 		//}
 		//return localBufferedImage;
 		return regionDetailImage;
-	}
-	private static final int KIBIBYTE = 1024;
-
-	@SuppressWarnings("unchecked")
-	private static void loadChunkData(CompoundTag levelTag, short[][] sectionBlockIds, byte[][] sectionBlockData, boolean[] sectionsUsed, byte[] biomeIds) {
-		for (int i = 0; i < MAX_CHUNK_SECTIONS; i++) {
-			sectionsUsed[i] = false;
-		}
-		Tag<?> biomesTag = levelTag.getValue().get("Biomes");
-		if (biomesTag != null) {
-			System.arraycopy(((IntArrayTag) biomesTag).getValue(), 0, biomeIds, 0, CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE);
-		} else {
-			for (int i = 0; i < CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE; i++) {
-				biomeIds[i] = -1;
-			}
-		}
-
-		for (CompoundTag sectionInfo : ((ListTag<CompoundTag>) levelTag.getValue().get("Sections")).getValue()) {
-			int sectionIndex = ((ByteTag) sectionInfo.getValue().get("Y")).getValue().intValue();
-			byte[] blockIdsLow = ((ByteArrayTag) sectionInfo.getValue().get("Blocks")).getValue();
-			byte[] blockData = ((ByteArrayTag) sectionInfo.getValue().get("Data")).getValue();
-			Tag<?> addTag = sectionInfo.getValue().get("Add");
-			byte[] blockAdd = null;
-			if (addTag != null) {
-				blockAdd = ((ByteArrayTag) addTag).getValue();
-			}
-			@SuppressWarnings("MismatchedReadAndWriteOfArray")
-			short[] destSectionBlockIds = sectionBlockIds[sectionIndex];
-			@SuppressWarnings("MismatchedReadAndWriteOfArray")
-			byte[] destSectionData = sectionBlockData[sectionIndex];
-			sectionsUsed[sectionIndex] = true;
-			for (int y = 0; y < CHUNK_SECTION_SIZE; ++y) {
-				for (int z = 0; z < CHUNK_SECTION_SIZE; ++z) {
-					for (int x = 0; x < CHUNK_SECTION_SIZE; ++x) {
-						int index = y * 256 + z * CHUNK_SECTION_SIZE + x;
-						short blockType = (short) (blockIdsLow[index] & 0xFF);
-						if (blockAdd != null) {
-							blockType |= getBlockFromNybbleArray(blockAdd, index) << 8;
-						}
-						destSectionBlockIds[index] = blockType;
-						destSectionData[index] = getBlockFromNybbleArray(blockData, index);
-					}
-				}
-			}
-		}
-	}
-
-	private static void preRenderChunk(
-		short[][] sectionBlockIds, byte[][] sectionBlockData,
-		boolean[] usedSections, byte[] biomeIds, BlockMap blockMap,
-		BiomeMap biomes, int cx, int cz, int[] colors, short[] heights) {
-		/**
-		 * Color of 16 air blocks stacked
-		 */
-		final int air16Color = Color.overlay(0, getColor(blockMap, biomes, 0, 0, 0), CHUNK_SECTION_SIZE);
-		int maxSectionCount = MAX_CHUNK_SECTIONS;
-		for (int s = 0; s < maxSectionCount; ++s) {
-			if (usedSections[s]) {
-				//++timer.sectionCount;
-			}
-		}
-
-		//resetInterval();
-		for (int z = 0; z < CHUNK_SECTION_SIZE; ++z) {
-			for (int x = 0; x < CHUNK_SECTION_SIZE; ++x) {
-				int pixelColor = 0;
-				short pixelHeight = 0;
-				int biomeId = biomeIds[z * CHUNK_SECTION_SIZE + x] & 0xFF;
-
-				for (int s = 0; s < maxSectionCount; ++s) {
-					if (usedSections[s]) {
-						short[] blockIds = sectionBlockIds[s];
-						byte[] blockData = sectionBlockData[s];
-
-						for (int idx = z * CHUNK_SECTION_SIZE + x, y = 0, absY = s * CHUNK_SECTION_SIZE; y < CHUNK_SECTION_SIZE; ++y, idx += 256, ++absY) {
-							final short blockId = blockIds[idx];
-							final byte blockDatum = blockData[idx];
-							int blockColor = getColor(blockMap, biomes, blockId & 0xFFFF, blockDatum, biomeId);
-							pixelColor = Color.overlay(pixelColor, blockColor);
-							if (Color.alpha(blockColor) >= SHADE_CUTOFF) {
-								pixelHeight = (short) absY;
-							}
-						}
-					} else {
-						pixelColor = Color.overlay(pixelColor, air16Color);
-					}
-				}
-
-				final int dIdx = 512 * (cz * CHUNK_SECTION_SIZE + z) + CHUNK_SECTION_SIZE * cx + x;
-				colors[dIdx] = pixelColor;
-				heights[dIdx] = pixelHeight;
-			}
-		}//pixelColor = new java.awt.Color(cz/32.0f,z/16.0f,cx/32.0f,x/16.0f).getRGB();
-	}
-
-	private static void demultiplyAlpha(int[] imageColorArray) {
-		for (int i = imageColorArray.length - 1; i >= 0; i--) {
-			imageColorArray[i] = Color.demultiplyAlpha(imageColorArray[i]);
-		}
 	}
 
 	private static void shade(short[] imageColorArray, int[] imageShadeArray) {
@@ -311,10 +215,6 @@ public class FlatImageRenderer implements RegionRenderer {
 		}
 	}
 
-	private static byte getBlockFromNybbleArray(byte[] paramArrayOfByte, int paramInt) {
-		return (byte) ((paramInt % 2 == 0 ? paramArrayOfByte[(paramInt / 2)] : paramArrayOfByte[(paramInt / 2)] >> 4) & 0xF);
-	}
-
 	private static int getColor(BlockMap blockMap, BiomeMap biomeMap, int blockId, int blockDatum, int biomeId) {
 		assert blockId >= 0 && blockId < blockMap.blocks.length;
 		assert blockDatum >= 0;
@@ -349,7 +249,7 @@ public class FlatImageRenderer implements RegionRenderer {
 		return rawChunkLocation;
 	}
 
-	private void renderChunk(CompoundTag levelTag, int localX, int localZ, Graphics2D g2) throws ExecutionException {
+	private void renderChunk(CompoundTag levelTag, int localX, int localZ, Graphics2D g2, BufferedImage image) throws ExecutionException {
 		ListTag<?> sections = (ListTag<?>) levelTag.getValue().get("Sections");
 		ChunkSection[] chunkSections = new ChunkSection[CHUNK_SECTION_SIZE];
 		Arrays.fill(chunkSections, this.emptyChunkSection);
@@ -412,7 +312,7 @@ public class FlatImageRenderer implements RegionRenderer {
 						continue;
 					}
 					TextureMapper block = s.getBlock(x, blockY, z);
-					block.apply(g2, x + localX * CHUNK_SECTION_SIZE, z + localZ * CHUNK_SECTION_SIZE);
+					block.apply(image, x + localX * CHUNK_SECTION_SIZE, z + localZ * CHUNK_SECTION_SIZE);
 				}
 			}
 		}

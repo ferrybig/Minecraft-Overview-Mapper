@@ -8,6 +8,7 @@ package me.ferrybig.java.minecraft.overview.mapper.textures;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -94,7 +95,7 @@ public class TextureCache {
 					if (isFullyTransparant) {
 						return EmptyTextureMapper.INSTANCE;
 					} else {
-						return new DefaultTextureMapper(image, containsTransparancy, key.getBlock());
+						return new DefaultTextureMapper(image, !containsTransparancy, key.getBlock());
 					}
 				}
 
@@ -110,7 +111,7 @@ public class TextureCache {
 
 		boolean isOpaque();
 
-		void apply(Graphics2D g2, int x, int z);
+		void apply(BufferedImage image, int x, int z);
 
 		String getBlock();
 	}
@@ -123,7 +124,7 @@ public class TextureCache {
 		}
 
 		@Override
-		public void apply(Graphics2D g2, int x, int z) {
+		public void apply(BufferedImage image, int x, int z) {
 		}
 
 		@Override
@@ -156,8 +157,24 @@ public class TextureCache {
 		}
 
 		@Override
-		public void apply(Graphics2D g2, int x, int z) {
-			g2.drawImage(image, x * 16, z * 16, null);
+		public void apply(BufferedImage image, int x, int z) {
+			int[] srcPixels = this.image.getRGB(0, 0, IMAGE_SIZE, IMAGE_SIZE, null, 0, IMAGE_SIZE);
+			int[] dstPixels = image.getRGB(x * IMAGE_SIZE, z * IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE, null, 0, IMAGE_SIZE);
+			for(int i = 0; i < srcPixels.length; i++) {
+				int aplha = (srcPixels[i] >>> 24);
+				if (aplha == 0xff) {
+					dstPixels[i] = srcPixels[i];
+				} else if (aplha != 0) {
+					Color color1 = new Color(dstPixels[i]);
+					Color color2 = new Color(srcPixels[i]);
+					float factor = aplha / 256f;
+					int red = (int) (color1.getRed() * (1 - factor) + color2.getRed() * factor);
+					int green = (int) (color1.getGreen() * (1 - factor) + color2.getGreen() * factor);
+					int blue = (int) (color1.getBlue() * (1 - factor) + color2.getBlue() * factor);
+					dstPixels[i] = new Color(red, green, blue).getRGB();
+				}
+			}
+			image.setRGB(x * IMAGE_SIZE, z * IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE, dstPixels, 0, IMAGE_SIZE);
 		}
 
 		@Override
