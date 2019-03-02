@@ -54,16 +54,50 @@ import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache.TextureM
  */
 public class FlatImageRenderer implements RegionRenderer {
 
+	/**
+	 * Chunk is in the GZIP format
+	 */
 	private static final int VERSION_GZIP = 1;
+	/**
+	 * Chunk is in the deflate format
+	 */
 	private static final int VERSION_DEFLATE = 2;
 
+	/**
+	 * Size of a kibibyte
+	 */
 	private static final int KIBIBYTE = 1024;
+
+	/**
+	 * Size of a sector in a region file
+	 */
 	private static final int SECTOR_BYTES = 4096;
+	/**
+	 * Amount of integers present in an "integer" section of an region file sector
+	 */
 	private static final int SECTOR_INTS = SECTOR_BYTES / 4;
 
-	private static final int SHADE_CUTOFF = 32;
-	public static final int CHUNK_SECTION_SIZE = 16;
-	private final static int MAX_CHUNK_SECTIONS = CHUNK_SECTION_SIZE;
+	/**
+	 * Dimensions of a single axis in a chunk section
+	 */
+	private static final int CHUNK_SECTION_SIZE = 16;
+
+	/**
+	 * Amount of chunk sections in a chunk
+	 */
+	private static final int MAX_CHUNK_SECTIONS = 16;
+
+	/**
+	 * Pixels rendered per block
+	 */
+	private static final int IMAGE_SIZE = 16;
+
+	/**
+	 * Amount of bits in a long object
+	 */
+	public static final int LONG_SIZE = 64;
+
+
 	private final TextureCache textures;
 	private final ChunkSection emptyChunkSection;
 
@@ -75,7 +109,7 @@ public class FlatImageRenderer implements RegionRenderer {
 		try {
 			this.emptyChunkSection = new ChunkSection(
 				1,
-				new long[LONG_SIZE],
+				new long[CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE / LONG_SIZE],
 				new TextureMapper[]{textures.get("air", Collections.emptyMap())},
 				true
 			);
@@ -96,20 +130,9 @@ public class FlatImageRenderer implements RegionRenderer {
 			}
 		}
 		assert in.getReadBytes() == SECTOR_BYTES;
-		this.skipFully(in, SECTOR_BYTES);
+		this.skipFully(in, SECTOR_BYTES); // Skip timestamp sector
 		assert in.getReadBytes() == SECTOR_BYTES * 2;
 
-		short[][] blockId = new short[MAX_CHUNK_SECTIONS][4096];
-		byte[][] blockData = new byte[MAX_CHUNK_SECTIONS][4096];
-		boolean[] sectionsUsedList = new boolean[MAX_CHUNK_SECTIONS];
-		byte[] biomes = new byte[256];
-		int[] imageColorArray = new int[512 * 512];
-		short[] imageShadeArray = new short[512 * 512];
-		int regionZ;
-		int regionX;
-		int globalX;
-		int globalZ;
-		long lastUpdate;
 		BufferedImage regionDetailImage = new BufferedImage(512 * CHUNK_SECTION_SIZE, 512 * CHUNK_SECTION_SIZE, BufferedImage.TYPE_INT_ARGB);
 		Integer lowestChunkIndex;
 		CompoundTag globalTag;
@@ -147,11 +170,10 @@ public class FlatImageRenderer implements RegionRenderer {
 				globalTag = (CompoundTag) new NBTInputStream(
 					new DataInputStream(chunkStream), false).readTag();
 				levelTag = (CompoundTag) globalTag.getValue().get("Level");
-				globalX = ((IntTag) levelTag.getValue().get("xPos")).getValue();
-				globalZ = ((IntTag) levelTag.getValue().get("zPos")).getValue();
-				lastUpdate = ((LongTag) levelTag.getValue().get("LastUpdate")).getValue();
-				regionX = calculateChunkPos(globalX);
-				regionZ = calculateChunkPos(globalZ);
+				int globalX = ((IntTag) levelTag.getValue().get("xPos")).getValue();
+				int globalZ = ((IntTag) levelTag.getValue().get("zPos")).getValue();
+				int regionX = calculateChunkPos(globalX);
+				int regionZ = calculateChunkPos(globalZ);
 
 				try {
 					System.out.println("Render chunk: " + regionX + "," + regionZ);
@@ -304,6 +326,8 @@ public class FlatImageRenderer implements RegionRenderer {
 					}
 				}
 				//System.out.println("Blockcolumn at " + x + "," + z + " has min height " + y);
+
+				int[] dstPixels = new int[IMAGE_SIZE * IMAGE_SIZE];
 				for (; y <= maxY; y++) {
 					int sectionId = y / CHUNK_SECTION_SIZE;
 					int blockY = y % CHUNK_SECTION_SIZE;
@@ -312,8 +336,17 @@ public class FlatImageRenderer implements RegionRenderer {
 						continue;
 					}
 					TextureMapper block = s.getBlock(x, blockY, z);
-					block.apply(image, x + localX * CHUNK_SECTION_SIZE, z + localZ * CHUNK_SECTION_SIZE);
+					block.apply(dstPixels);
 				}
+				image.setRGB(
+					(x + localX * CHUNK_SECTION_SIZE) * IMAGE_SIZE,
+					(z + localZ * CHUNK_SECTION_SIZE) * IMAGE_SIZE,
+					IMAGE_SIZE,
+					IMAGE_SIZE,
+					dstPixels,
+					0,
+					IMAGE_SIZE
+				);
 			}
 		}
 
@@ -390,5 +423,4 @@ public class FlatImageRenderer implements RegionRenderer {
 		}
 
 	}
-	public static final int LONG_SIZE = 64;
 }

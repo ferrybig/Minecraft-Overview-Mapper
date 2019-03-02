@@ -311,7 +311,7 @@ public class TextureParser {
 			Map<String, Model> modelCache = new HashMap<>();
 			// Default blocks internally handles by mc
 			{
-				modelCache.put("block/water", new Model(
+				final Model model = new Model(
 					Collections.singletonList(
 						new Cube(
 							new Vector3d(0, 0, 0), new Vector3d(16, 14, 16),
@@ -320,13 +320,15 @@ public class TextureParser {
 								"#water",
 								null,
 								0,
-								0,
+								1,
 								true
 							),
 							null, null, null, null, Rotation.NOOP
 						)
 					), Collections.singletonMap("water", "block/water_still"), null
-				));
+				);
+				modelCache.put("special/water", model);
+				blockstates.put("render_water", new SimpleVariant(Collections.singletonList(new VariantModel(model, 0, 0, false))));
 			}
 			{
 				JsonParser parser = new JsonParser();

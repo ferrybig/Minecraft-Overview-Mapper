@@ -51,7 +51,7 @@ public class Face {
 		return tintIndex;
 	}
 
-	public boolean isUsesTintIndex() {
+	public boolean usesTintIndex() {
 		return usesTintIndex;
 	}
 

@@ -8,6 +8,7 @@ package me.ferrybig.java.minecraft.overview.mapper.textures;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -16,11 +17,12 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.Variant;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.VariantModel;
@@ -29,6 +31,8 @@ public class TextureCache {
 
 	private static final int IMAGE_SIZE = 16;
 	private static final int IMAGE_SIZE_SQUARED = IMAGE_SIZE * IMAGE_SIZE;
+	private static final Color WATER_COLOR = new Color(0, 38, 248, 0);
+	private static final Color GRASS_COLOR = new Color(10, 128, 20, 0);
 
 	private final LoadingCache<TextureKey, TextureMapper> cache;
 
@@ -42,8 +46,16 @@ public class TextureCache {
 					BufferedImage image = new BufferedImage(IMAGE_SIZE, IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
 					Graphics2D g2 = image.createGraphics();
 					try {
-						Iterator<Map.Entry<VariantModel, Cube>> iterator = variant
-							.stream()
+						Stream<VariantModel> stream;
+						if ("minecraft:water".equals(key.getBlock()) || "minecraft:bubble_column".equals(key.getBlock())) {
+							stream = parser.getMaterial("render_water", Collections.emptyMap()).stream();
+						} else if ("true".equals(key.getState().get("waterlogged"))) {
+							stream = Stream.concat(variant.stream(), parser.getMaterial("render_water", Collections.emptyMap()).stream());
+						} else {
+							stream = variant.stream();
+						}
+
+						Iterator<Map.Entry<VariantModel, Cube>> iterator = stream
 							.flatMap(e -> e.getModel().getElements().stream().map(c -> (Map.Entry<VariantModel, Cube>) new AbstractMap.SimpleImmutableEntry<>(e, c)))
 							.sorted(Comparator.comparing((Map.Entry<VariantModel, Cube> c) -> c.getValue().getFrom().getY()))
 							.iterator();
@@ -54,8 +66,20 @@ public class TextureCache {
 							if (face == null) {
 								continue;
 							}
+							BufferedImage texture = parser.getTexture(next.getKey().getModel(), face.getTexture());
+							if (face.usesTintIndex()) {
+								if (face.getTintIndex() == 1) { // tintindex of 1 is the special water texture
+									BufferedImage newTexture = new BufferedImage(texture.getWidth(), texture.getHeight(), texture.getType());
+									tint(texture, newTexture, WATER_COLOR);
+									texture = newTexture;
+								} else if (face.getTintIndex() == 0) { // tintindex of 0 is biome colors
+									BufferedImage newTexture = new BufferedImage(texture.getWidth(), texture.getHeight(), texture.getType());
+									tint(texture, newTexture, GRASS_COLOR);
+									texture = newTexture;
+								}
+							}
 							boolean draw = g2.drawImage(
-								parser.getTexture(next.getKey().getModel(), face.getTexture()),
+								texture,
 								// destination
 								(int) cube.getFrom().getX(), (int) cube.getFrom().getZ(),
 								(int) (cube.getTo().getX() - cube.getFrom().getX()), (int) (cube.getTo().getZ() - cube.getFrom().getZ()),
@@ -87,15 +111,13 @@ public class TextureCache {
 					assert 0 <= fullyTransparantPixels;
 					boolean isFullyTransparant = fullyTransparantPixels == IMAGE_SIZE_SQUARED;
 					boolean containsTransparancy = transparantPixels != 0;
-					System.out.println("Block " + key.getBlock() + " is transparant? " + containsTransparancy + " " + isFullyTransparant);
 
-					try (OutputStream out = Files.newOutputStream(Paths.get("renderTest/" + key.getBlock().replace(":", "_") + ".png"))) {
-						ImageIO.write(image, "png", out);
-					}
 					if (isFullyTransparant) {
 						return EmptyTextureMapper.INSTANCE;
+					} else if (containsTransparancy) {
+						return new TransparantTextureMapper(image, key.getBlock());
 					} else {
-						return new DefaultTextureMapper(image, !containsTransparancy, key.getBlock());
+						return new SolidTextureMapper(image, key.getBlock());
 					}
 				}
 
@@ -106,12 +128,24 @@ public class TextureCache {
 		return this.cache.get(new TextureKey(block, state));
 	}
 
+	private static void tint(BufferedImage source, BufferedImage dst, Color color) {
+		int[] pixels = source.getRGB(0, 0, source.getWidth(), source.getHeight(), null, 0, source.getWidth());
+		for (int i = 0; i < pixels.length; i++) {
+			Color pixelColor = new Color(pixels[i], true);
+			int r = (pixelColor.getRed() + color.getRed()) / 2;
+			int g = (pixelColor.getGreen() + color.getGreen()) / 2;
+			int b = (pixelColor.getBlue() + color.getBlue()) / 2;
+			int a = pixelColor.getAlpha();
+			pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
+		}
+		dst.setRGB(0, 0, source.getWidth(), source.getHeight(), pixels, 0, source.getWidth());
+	}
 
 	public interface TextureMapper {
 
 		boolean isOpaque();
 
-		void apply(BufferedImage image, int x, int z);
+		void apply(int[] dstPixels);
 
 		String getBlock();
 	}
@@ -120,11 +154,8 @@ public class TextureCache {
 
 		public static final EmptyTextureMapper INSTANCE = new EmptyTextureMapper();
 
-		private EmptyTextureMapper() {
-		}
-
 		@Override
-		public void apply(BufferedImage image, int x, int z) {
+		public void apply(int[] dstPixels) {
 		}
 
 		@Override
@@ -139,28 +170,24 @@ public class TextureCache {
 
 		@Override
 		public String getBlock() {
-			return "air";
+			return "special:empty";
 		}
 
 	}
 
-	private static class DefaultTextureMapper implements TextureMapper {
+	private static class TransparantTextureMapper implements TextureMapper {
 
-		private final BufferedImage image;
-		private final boolean opaque;
+		private final int[] srcPixels;
 		private final String block;
 
-		public DefaultTextureMapper(BufferedImage image, boolean opaque, String block) {
-			this.image = image;
-			this.opaque = opaque;
+		public TransparantTextureMapper(BufferedImage image, String block) {
+			this.srcPixels = image.getRGB(0, 0, IMAGE_SIZE, IMAGE_SIZE, null, 0, IMAGE_SIZE);
 			this.block = block;
 		}
 
 		@Override
-		public void apply(BufferedImage image, int x, int z) {
-			int[] srcPixels = this.image.getRGB(0, 0, IMAGE_SIZE, IMAGE_SIZE, null, 0, IMAGE_SIZE);
-			int[] dstPixels = image.getRGB(x * IMAGE_SIZE, z * IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE, null, 0, IMAGE_SIZE);
-			for(int i = 0; i < srcPixels.length; i++) {
+		public void apply(int[] dstPixels) {
+			for (int i = 0; i < srcPixels.length; i++) {
 				int aplha = (srcPixels[i] >>> 24);
 				if (aplha == 0xff) {
 					dstPixels[i] = srcPixels[i];
@@ -174,12 +201,11 @@ public class TextureCache {
 					dstPixels[i] = new Color(red, green, blue).getRGB();
 				}
 			}
-			image.setRGB(x * IMAGE_SIZE, z * IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE, dstPixels, 0, IMAGE_SIZE);
 		}
 
 		@Override
 		public boolean isOpaque() {
-			return this.opaque;
+			return false;
 		}
 
 		@Override
@@ -189,7 +215,39 @@ public class TextureCache {
 
 		@Override
 		public String toString() {
-			return "DefaultTextureMapper{" + "block=" + block + ", image=" + image + ", opaque=" + opaque + '}';
+			return "TransparantTextureMapper{" + "block=" + block + '}';
+		}
+
+	}
+
+	private static class SolidTextureMapper implements TextureMapper {
+
+		private final int[] srcPixels;
+		private final String block;
+
+		public SolidTextureMapper(BufferedImage image, String block) {
+			this.srcPixels = image.getRGB(0, 0, IMAGE_SIZE, IMAGE_SIZE, null, 0, IMAGE_SIZE);
+			this.block = block;
+		}
+
+		@Override
+		public void apply(int[] dstPixels) {
+			System.arraycopy(this.srcPixels, 0, dstPixels, 0, this.srcPixels.length);
+		}
+
+		@Override
+		public boolean isOpaque() {
+			return true;
+		}
+
+		@Override
+		public String getBlock() {
+			return block;
+		}
+
+		@Override
+		public String toString() {
+			return "SolidTextureMapper{" + "block=" + block + '}';
 		}
 
 	}
