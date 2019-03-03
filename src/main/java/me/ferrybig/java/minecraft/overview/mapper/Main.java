@@ -14,8 +14,6 @@ import me.ferrybig.java.minecraft.overview.mapper.input.DirectoryInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.InputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.TarGzInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap;
-import me.ferrybig.java.minecraft.overview.mapper.render.BlockMap;
-import me.ferrybig.java.minecraft.overview.mapper.render.DefaultImageRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.FlatImageRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.RegionRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.RenderEngine;

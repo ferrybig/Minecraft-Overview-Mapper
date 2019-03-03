@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import me.ferrybig.java.minecraft.overview.mapper.textures.Model;
 
 public class CombinedVariant implements Variant {
 

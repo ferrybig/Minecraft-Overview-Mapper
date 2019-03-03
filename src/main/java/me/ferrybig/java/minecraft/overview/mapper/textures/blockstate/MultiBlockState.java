@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.specifier.VariantSpecifier;
-import me.ferrybig.java.minecraft.overview.mapper.textures.variant.CombinedVariant;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.SimpleVariant;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.Variant;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.VariantModel;

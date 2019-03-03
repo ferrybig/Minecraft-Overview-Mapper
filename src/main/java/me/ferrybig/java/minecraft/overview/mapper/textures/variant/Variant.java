@@ -5,12 +5,12 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.textures.variant;
 
-import me.ferrybig.java.minecraft.overview.mapper.textures.blockstate.UnresolvedBlockState;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import me.ferrybig.java.minecraft.overview.mapper.textures.blockstate.UnresolvedBlockState;
 
 public interface Variant extends Iterable<VariantModel>, UnresolvedBlockState {
 

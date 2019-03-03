@@ -7,8 +7,6 @@ package me.ferrybig.java.minecraft.overview.mapper.textures.blockstate;
 
 import java.util.Map;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.Variant;
-import me.ferrybig.java.minecraft.overview.mapper.textures.variant.VariantModel;
-import me.ferrybig.java.minecraft.overview.mapper.textures.variant.specifier.VariantSpecifier;
 
 public interface UnresolvedBlockState {
 

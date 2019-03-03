@@ -6,27 +6,18 @@
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
 import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache;
-import com.flowpowered.nbt.ByteArrayTag;
 import com.flowpowered.nbt.ByteTag;
 import com.flowpowered.nbt.CompoundMap;
 import com.flowpowered.nbt.CompoundTag;
-import com.flowpowered.nbt.IntArrayTag;
 import com.flowpowered.nbt.IntTag;
 import com.flowpowered.nbt.ListTag;
 import com.flowpowered.nbt.LongArrayTag;
-import com.flowpowered.nbt.LongTag;
 import com.flowpowered.nbt.StringTag;
 import com.flowpowered.nbt.Tag;
 import com.flowpowered.nbt.stream.NBTInputStream;
 import com.google.common.base.Preconditions;
-import java.awt.AlphaComposite;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -35,15 +26,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
-import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap.Biome;
-import me.ferrybig.java.minecraft.overview.mapper.render.BlockMap.Block;
-import me.ferrybig.java.minecraft.overview.mapper.streams.ByteCountingDataInputStream;
 import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache.TextureMapper;
 
 /**

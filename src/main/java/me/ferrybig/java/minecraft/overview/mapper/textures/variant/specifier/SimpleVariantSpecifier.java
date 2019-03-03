@@ -7,7 +7,6 @@ package me.ferrybig.java.minecraft.overview.mapper.textures.variant.specifier;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.SortedMap;
 
 public class SimpleVariantSpecifier implements VariantSpecifier {
 
