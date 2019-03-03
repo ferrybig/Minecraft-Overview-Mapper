@@ -57,6 +57,11 @@ public class FlatImageRenderer implements RegionRenderer {
 	 */
 	public static final int LONG_SIZE = 64;
 
+	/**
+	 * Amount of blocks in a chunk section
+	 */
+	public static final int BLOCKS_IN_CHUNK_SECTION = CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE;
+
 	private final TextureCache textures;
 	private final ChunkSection emptyChunkSection;
 
@@ -68,7 +73,7 @@ public class FlatImageRenderer implements RegionRenderer {
 		try {
 			this.emptyChunkSection = new ChunkSection(
 				1,
-				new long[CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE / LONG_SIZE],
+				new long[BLOCKS_IN_CHUNK_SECTION / LONG_SIZE],
 				new TextureMapper[]{textures.get("air", Collections.emptyMap())},
 				true
 			);
@@ -143,7 +148,7 @@ public class FlatImageRenderer implements RegionRenderer {
 			int y = ((ByteTag) root.get("Y")).getValue();
 			maxY = Math.max(maxY, y * CHUNK_SECTION_SIZE + 15);
 			chunkSections[y] = new ChunkSection(
-				blockStates.length * LONG_SIZE / (CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE),
+				blockStates.length * LONG_SIZE / (BLOCKS_IN_CHUNK_SECTION),
 				blockStates,
 				parsedPallete,
 				false
