@@ -55,29 +55,6 @@ import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache.TextureM
 public class FlatImageRenderer implements RegionRenderer {
 
 	/**
-	 * Chunk is in the GZIP format
-	 */
-	private static final int VERSION_GZIP = 1;
-	/**
-	 * Chunk is in the deflate format
-	 */
-	private static final int VERSION_DEFLATE = 2;
-
-	/**
-	 * Size of a kibibyte
-	 */
-	private static final int KIBIBYTE = 1024;
-
-	/**
-	 * Size of a sector in a region file
-	 */
-	private static final int SECTOR_BYTES = 4096;
-	/**
-	 * Amount of integers present in an "integer" section of an region file sector
-	 */
-	private static final int SECTOR_INTS = SECTOR_BYTES / 4;
-
-	/**
 	 * Dimensions of a single axis in a chunk section
 	 */
 	private static final int CHUNK_SECTION_SIZE = 16;
@@ -96,7 +73,6 @@ public class FlatImageRenderer implements RegionRenderer {
 	 * Amount of bits in a long object
 	 */
 	public static final int LONG_SIZE = 64;
-
 
 	private final TextureCache textures;
 	private final ChunkSection emptyChunkSection;
@@ -120,147 +96,29 @@ public class FlatImageRenderer implements RegionRenderer {
 
 	@Override
 	public BufferedImage renderFile(String fileName, InputStream input) throws IOException {
-		ByteCountingDataInputStream in = new ByteCountingDataInputStream(new BufferedInputStream(input, SECTOR_BYTES * 2));
-		PriorityQueue<Integer> chunkIndexes = new PriorityQueue<>(Integer::compare);
-		for (int k = 0; k < SECTOR_INTS; ++k) {
-			int offset = in.readInt();
-			if (offset != 0) {
-				int sectorNumber = offset >> 8;
-				chunkIndexes.add(sectorNumber * SECTOR_BYTES);
+		ChunkReader reader = new ChunkReader(input);
+
+		BufferedImage regionDetailImage = new BufferedImage(512 * IMAGE_SIZE, 512 * IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
+
+		// chunkStream comes from ChunkReader, closing is optional
+		InputStream chunkStream;
+		while ((chunkStream = reader.nextChunk()) != null) {
+			CompoundTag globalTag = (CompoundTag) new NBTInputStream(
+				new DataInputStream(chunkStream), false).readTag();
+			CompoundTag levelTag = (CompoundTag) globalTag.getValue().get("Level");
+			int globalX = ((IntTag) levelTag.getValue().get("xPos")).getValue();
+			int globalZ = ((IntTag) levelTag.getValue().get("zPos")).getValue();
+			int regionX = calculateChunkPos(globalX);
+			int regionZ = calculateChunkPos(globalZ);
+
+			try {
+				System.out.println("Render chunk: " + regionX + "," + regionZ);
+				renderChunk(levelTag, regionX, regionZ, regionDetailImage);
+			} catch (ExecutionException ex) {
+				throw new IOException(ex);
 			}
 		}
-		assert in.getReadBytes() == SECTOR_BYTES;
-		this.skipFully(in, SECTOR_BYTES); // Skip timestamp sector
-		assert in.getReadBytes() == SECTOR_BYTES * 2;
-
-		BufferedImage regionDetailImage = new BufferedImage(512 * CHUNK_SECTION_SIZE, 512 * CHUNK_SECTION_SIZE, BufferedImage.TYPE_INT_ARGB);
-		Integer lowestChunkIndex;
-		CompoundTag globalTag;
-		CompoundTag levelTag;
-		byte[] data = new byte[4 * KIBIBYTE];
-		Graphics2D g2 = regionDetailImage.createGraphics();
-		try {
-			while ((lowestChunkIndex = chunkIndexes.poll()) != null) {
-				long chunkIndex = lowestChunkIndex;
-				long bytesRead = in.getReadBytes();
-				if (bytesRead > chunkIndex) {
-					throw new IOException("We already read " + bytesRead + " but a chunk exisists at byte index " + chunkIndex);
-				} else if (bytesRead < chunkIndex) {
-					this.skipFully(in, chunkIndex - bytesRead);
-				}
-				assert in.getReadBytes() == chunkIndex;
-				int chunkLength = in.readInt();
-				if (data.length < chunkLength) {
-					data = new byte[(chunkLength / KIBIBYTE + 1) * KIBIBYTE];
-				}
-				in.readFully(data, 0, chunkLength);
-				byte version = data[0];
-				// Don't close chunkstream as its based on a ByteArrayInputStream object
-				InputStream chunkStream = new ByteArrayInputStream(data, 1, data.length - 1);
-				switch (version) {
-					case VERSION_GZIP:
-						chunkStream = new GZIPInputStream(chunkStream);
-						break;
-					case VERSION_DEFLATE:
-						chunkStream = new InflaterInputStream(chunkStream);
-						break;
-					default:
-						throw new IOException("Invalid format: " + version);
-				}
-				globalTag = (CompoundTag) new NBTInputStream(
-					new DataInputStream(chunkStream), false).readTag();
-				levelTag = (CompoundTag) globalTag.getValue().get("Level");
-				int globalX = ((IntTag) levelTag.getValue().get("xPos")).getValue();
-				int globalZ = ((IntTag) levelTag.getValue().get("zPos")).getValue();
-				int regionX = calculateChunkPos(globalX);
-				int regionZ = calculateChunkPos(globalZ);
-
-				try {
-					System.out.println("Render chunk: " + regionX + "," + regionZ);
-					renderChunk(levelTag, regionX, regionZ, g2, regionDetailImage);
-				} catch (ExecutionException ex) {
-					throw new IOException(ex);
-				}
-			}
-		} finally {
-			g2.dispose();
-		}
-		//demultiplyAlpha(imageColorArray);
-		//shade(imageShadeArray, imageColorArray);
-
-		//BufferedImage localBufferedImage = new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB);
-		//for (int k = 0; k < 512; k++) {
-		//	localBufferedImage.setRGB(0, k, 512, 1, imageColorArray, 512 * k, 512);
-		//}
-		//return localBufferedImage;
 		return regionDetailImage;
-	}
-
-	private static void shade(short[] imageColorArray, int[] imageShadeArray) {
-		int xMax = 512;
-		int zMax = 512;
-
-		int index = 0;
-		for (int z = 0; z < zMax; z++) {
-			for (int x = 0; x < xMax; x++, index++) {
-				if (imageShadeArray[index] != 0) {
-					float xAdjustment;
-					if (x == 0) {
-						xAdjustment = imageColorArray[(index + 1)] - imageColorArray[index];
-					} else if (x == xMax - 1) {
-						xAdjustment = imageColorArray[index] - imageColorArray[(index - 1)];
-					} else {
-						xAdjustment = (imageColorArray[(index + 1)] - imageColorArray[(index - 1)]) * 2;
-					}
-					float zAdjustment;
-					if (z == 0) {
-						zAdjustment = imageColorArray[(index + xMax)] - imageColorArray[index];
-					} else if (z == zMax - 1) {
-						zAdjustment = imageColorArray[index] - imageColorArray[(index - xMax)];
-					} else {
-						zAdjustment = (imageColorArray[(index + xMax)] - imageColorArray[(index - xMax)]) * 2;
-					}
-					float totalAdjustment = xAdjustment + zAdjustment;
-					if (totalAdjustment > 10.0F) {
-						totalAdjustment = 10.0F;
-					}
-					if (totalAdjustment < -10.0F) {
-						totalAdjustment = -10.0F;
-					}
-
-					totalAdjustment = (float) (totalAdjustment + (imageColorArray[index] - LONG_SIZE) / 7.0D);
-
-					imageShadeArray[index] = Color.shade(imageShadeArray[index], (int) (totalAdjustment * 8.0F));
-				}
-
-			}
-		}
-	}
-
-	private static int getColor(BlockMap blockMap, BiomeMap biomeMap, int blockId, int blockDatum, int biomeId) {
-		assert blockId >= 0 && blockId < blockMap.blocks.length;
-		assert blockDatum >= 0;
-
-		int blockColor;
-		int biomeInfluence;
-
-		Block bc = blockMap.blocks[blockId];
-		if (bc.hasSubColors.length > blockDatum && bc.hasSubColors[blockDatum]) {
-			blockColor = bc.subColors[blockDatum];
-			biomeInfluence = bc.subColorInfluences[blockDatum];
-		} else {
-			blockColor = bc.baseColor;
-			biomeInfluence = bc.baseInfluence;
-		}
-		if (bc.isDefault) {
-//            System.out.println("Unknown block: " + blockId);
-		}
-
-		Biome biome = biomeMap.getBiome(biomeId);
-		int biomeColor = biome.getMultiplier(biomeInfluence);
-
-		return Color.multiplySolid(blockColor, biomeColor);
-
 	}
 
 	private static int calculateChunkPos(int rawChunkLocation) {
@@ -271,9 +129,9 @@ public class FlatImageRenderer implements RegionRenderer {
 		return rawChunkLocation;
 	}
 
-	private void renderChunk(CompoundTag levelTag, int localX, int localZ, Graphics2D g2, BufferedImage image) throws ExecutionException {
+	private void renderChunk(CompoundTag levelTag, int localX, int localZ, BufferedImage image) throws ExecutionException {
 		ListTag<?> sections = (ListTag<?>) levelTag.getValue().get("Sections");
-		ChunkSection[] chunkSections = new ChunkSection[CHUNK_SECTION_SIZE];
+		ChunkSection[] chunkSections = new ChunkSection[MAX_CHUNK_SECTIONS];
 		Arrays.fill(chunkSections, this.emptyChunkSection);
 		int maxY = 0;
 		for (Object section : sections.getValue()) {
@@ -350,18 +208,6 @@ public class FlatImageRenderer implements RegionRenderer {
 			}
 		}
 
-	}
-
-	private void skipFully(InputStream in, long n) throws IOException {
-		long total = 0;
-		long cur = 0;
-
-		while ((total < n) && ((cur = in.skip(n - total)) > 0)) {
-			total += cur;
-		}
-		if (total != n) {
-			throw new EOFException();
-		}
 	}
 
 	private class ChunkSection {
