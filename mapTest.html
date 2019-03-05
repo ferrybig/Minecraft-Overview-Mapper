@@ -16,8 +16,8 @@
 
 	var map = L.map('map', {
 		crs: L.CRS.Simple,
-		center: [-3754.5, 3754.5],
-		zoom: 0
+		center: [0, 0],
+		zoom: 10
 	});
 	
 	function hex(number) {
@@ -38,7 +38,8 @@
 		createTile: function (coords, done) {
 			var tile = document.createElement('div');
 			var image = new Image(256, 256);
-			var url = `renderTest/tiles/${mod(coords.x)}/${mod(coords.y)}/${div(coords.x)}_${div(coords.y)}.png`;
+			//var url = `renderTest/tiles/${mod(coords.x)}/${mod(coords.y)}/${div(coords.x)}_${div(coords.y)}.png`;
+			var url = `renderTest/complex-tiles/${coords.z}/${coords.x}_${coords.y}.gif`;
 			image.onload = function() {
 				tile.appendChild(image);
 				done(null, tile);

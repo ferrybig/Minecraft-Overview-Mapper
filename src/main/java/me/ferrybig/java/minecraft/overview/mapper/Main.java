@@ -14,11 +14,11 @@ import me.ferrybig.java.minecraft.overview.mapper.input.DirectoryInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.InputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.TarGzInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap;
+import me.ferrybig.java.minecraft.overview.mapper.render.ComplexImageOutputRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.FlatImageRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.RegionRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.RenderEngine;
 import me.ferrybig.java.minecraft.overview.mapper.render.SimpleHTMLOutputRenderer;
-import me.ferrybig.java.minecraft.overview.mapper.render.SimpleImageOutputRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache;
 import me.ferrybig.java.minecraft.overview.mapper.textures.TextureParser;
 import org.apache.commons.cli.CommandLine;
@@ -89,7 +89,7 @@ public class Main {
 		if (out.toAbsolutePath().toString().endsWith(".html")) {
 			outputSource = new SimpleHTMLOutputRenderer(rend, out.toFile(), "gif");
 		} else {
-			outputSource = new SimpleImageOutputRenderer(rend, out);
+			outputSource = new ComplexImageOutputRenderer(rend, out);
 		}
 
 		System.err.println("In-type: " + inputSource.getClass());
