@@ -9,5 +9,6 @@ public class Debug {
 
 	public static void main(String[] artgs) throws Exception {
 		Main.main(new String[]{"-i", "C:\\Users\\Fernando\\AppData\\Roaming\\.minecraft\\saves\\mesaSee", "-o", "renderTest/"});
+		//Main.main(new String[]{"-i", "C:\\Users\\Fernando\\AppData\\Roaming\\.minecraft\\saves\\Debug", "-o", "renderTest/"});
 	}
 }
