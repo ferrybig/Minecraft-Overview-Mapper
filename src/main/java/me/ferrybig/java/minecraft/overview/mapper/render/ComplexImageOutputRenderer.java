@@ -30,6 +30,7 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 	private final Path images;
 	private final int normalZoom = 10;
 	private final int normalRes = 256;
+	private final int maxZoom = 15;
 	private final Set<ImageEntry> zoomedOutLayers = new HashSet<>();
 
 	public ComplexImageOutputRenderer(RegionRenderer renderer, Path outputDir) {
@@ -158,8 +159,8 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 						}
 					}
 				}
-				if (currentZoom > 11) {
-					break; // DEBUG
+				if (currentZoom >= this.maxZoom) {
+					break;
 				}
 			}
 		} finally {
