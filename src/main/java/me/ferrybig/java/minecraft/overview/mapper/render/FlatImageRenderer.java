@@ -119,6 +119,9 @@ public class FlatImageRenderer implements RegionRenderer {
 
 	private void renderChunk(CompoundTag levelTag, int localX, int localZ, BufferedImage image) throws ExecutionException {
 		ListTag<?> sections = (ListTag<?>) levelTag.getValue().get("Sections");
+		if(sections == null) {
+			return; // This is an empty chunk
+		}
 		ChunkSection[] chunkSections = new ChunkSection[MAX_CHUNK_SECTIONS];
 		Arrays.fill(chunkSections, this.emptyChunkSection);
 		int maxY = 0;
