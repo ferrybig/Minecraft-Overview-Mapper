@@ -54,6 +54,7 @@ public class TextureParser {
 	private static final String TEXTURES_SUFFIX = ".png";
 	private static final BufferedImage IMAGE_NOT_FOUND;
 	private static final BufferedImage IMAGE_ERROR;
+	private static final boolean DEBUG = false;
 
 	static {
 		IMAGE_NOT_FOUND = new BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB);
@@ -131,7 +132,9 @@ public class TextureParser {
 			}
 			return model;
 		}
-		System.err.println("Loading model block/" + modelName + "...");
+		if (DEBUG) {
+			System.err.println("Loading model block/" + modelName + "...");
+		}
 		modelCache.put(modelName, null);
 		JsonObject model;
 		try (Reader in = readTextFromZipList(files, BLOCKS_PREFIX + modelName + BLOCKS_SUFFIX)) {
@@ -299,7 +302,9 @@ public class TextureParser {
 				String materialName = name.substring(BLOCKSTATES_PREFIX.length(), name.length() - BLOCKSTATES_SUFFIX.length());
 				materials.add(materialName);
 			}
-			System.err.println("Discovered " + materials.size() + " blockstate");
+			if (DEBUG) {
+				System.err.println("Discovered " + materials.size() + " blockstate");
+			}
 			// Discovery done, its now time to resolve all files
 			Map<String, UnresolvedBlockState> blockstates = new HashMap<>();
 			Map<String, Model> modelCache = new HashMap<>();
@@ -328,8 +333,10 @@ public class TextureParser {
 				JsonParser parser = new JsonParser();
 				for (String material : materials) {
 					try {
-						System.err.println("-------------------------------------");
-						System.err.println("Loading blockstate: " + material + "...");
+						if (DEBUG) {
+							System.err.println("-------------------------------------");
+							System.err.println("Loading blockstate: " + material + "...");
+						}
 						final UnresolvedBlockState blockState;
 						{
 							JsonObject mainMaterial;

@@ -26,15 +26,16 @@ import javax.imageio.ImageIO;
  */
 public class ComplexImageOutputRenderer extends SimpleRenderer {
 
+	private static final boolean DEBUG = false;
+
 	private final Path outputDir;
 	private final Path images;
 	private final int normalZoom = 10;
-	private final int normalRes = 256;
-	private final int maxZoom = 15;
+	private final int normalRes = 512;
+	private final int maxZoom = 14;
 	private final Set<ImageEntry> zoomedOutLayers = new HashSet<>();
 
-	public ComplexImageOutputRenderer(RegionRenderer renderer, Path outputDir) {
-		super(renderer);
+	public ComplexImageOutputRenderer(Path outputDir) {
 		this.outputDir = outputDir;
 		this.images = outputDir.resolve("complex-tiles");
 	}
@@ -97,8 +98,10 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 						entry.getX(),
 						entry.getZ()
 					);
-					System.err.println("Rendering zoom level " + zoomLevel + ", tile: " + entry.getX() + ", " + entry.getZ() + " (" + found + "/4)");
-					System.err.println(imageLocation);
+					if (DEBUG) {
+						System.err.println("Rendering zoom level " + zoomLevel + ", tile: " + entry.getX() + ", " + entry.getZ() + " (" + found + "/4)");
+						System.err.println(imageLocation);
+					}
 					try (OutputStream out = Files.newOutputStream(imageLocation)) {
 						ImageIO.write(renderResult, "gif", out);
 					}
@@ -118,7 +121,8 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 	}
 
 	@Override
-	protected void addImage(BufferedImage tile, int x, int z) throws IOException {
+	protected void addImage(BufferedImage tile, int dimension, int x, int z) throws IOException {
+		// todo use dimension
 		int currentZoom = this.normalZoom;
 		int imageWidth = tile.getWidth();
 		int adjustedImageWidth = imageWidth;
@@ -148,8 +152,10 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 							x * tilesToGenerate + tileX,
 							z * tilesToGenerate + tileZ
 						);
-						System.err.println("Rendering zoom level " + currentZoom + ", tile: " + tileX + ", " + tileZ + " (" + x + "," + z + ") ");
-						System.err.println(imageLocation);
+						if (DEBUG) {
+							System.err.println("Rendering zoom level " + currentZoom + ", tile: " + tileX + ", " + tileZ + " (" + x + "," + z + ") ");
+							System.err.println(imageLocation);
+						}
 						try (OutputStream out = Files.newOutputStream(imageLocation)) {
 							ImageIO.write(renderResult, "gif", out);
 						}

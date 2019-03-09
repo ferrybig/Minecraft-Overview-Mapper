@@ -7,10 +7,10 @@ package me.ferrybig.java.minecraft.overview.mapper.render;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
+import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
 
 public interface RegionRenderer {
 
-	public BufferedImage renderFile(String fileName, InputStream in)
+	public BufferedImage renderFile(PreparedFile file)
 		throws IOException;
 }

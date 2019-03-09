@@ -6,58 +6,50 @@
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
 import com.flowpowered.nbt.CompoundTag;
-import com.flowpowered.nbt.stream.NBTInputStream;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
+import java.util.Collections;
+import java.util.List;
+import me.ferrybig.java.minecraft.overview.mapper.input.WorldFile;
 
-public abstract class SimpleRenderer implements RenderEngine {
-
-	private static final Pattern REGION_FILE_PATTERN
-		= Pattern.compile("^(?:[^/]*/)*r\\.(-?\\d+)\\.(-?\\d+)\\.mca$");
-	private final RegionRenderer renderer;
-
-	public SimpleRenderer(RegionRenderer renderer) {
-		this.renderer = renderer;
-	}
+public abstract class SimpleRenderer implements ImageWriter {
 
 	@Override
-	public void addFile(String fileName, InputStream in) throws IOException {
-		Matcher localMatcher;
-		if ((localMatcher = REGION_FILE_PATTERN.matcher(fileName)).matches()) {
-			addImage(renderer.renderFile(fileName, in),
-				Integer.parseInt((localMatcher.group(1))),
-				Integer.parseInt((localMatcher.group(2))));
-		} else if (fileName.endsWith("level.dat")) {
-			this.addLevelDat((CompoundTag) new NBTInputStream(new GZIPInputStream(in), false).readTag());
-		} else if (fileName.endsWith("mcr")) {
-
-		} else {
-			throw new IOException("Unknown file: " + fileName);
+	public void addFile(WorldFile file, Object renderResult) throws IOException {
+		switch (file.getType()) {
+			case REGION_MCA:
+			case REGION_MCR:
+				this.addImage((BufferedImage) renderResult, file.getDimension(), file.getX(), file.getZ());
+				break;
+			default:
+				System.out.println("Unknown file: " + file.getType() + ": " + file.getOrignalName());
 		}
 	}
 
 	protected abstract void addLevelDat(CompoundTag level) throws IOException;
 
-	protected abstract void addImage(BufferedImage tile, int x, int z)
+	protected abstract void addImage(BufferedImage tile, int dimension, int x, int z)
 		throws IOException;
 
 	@Override
-	public RenderEngine fork() {
-		throw new IllegalStateException("Not concurrent");
+	public void addKnownFile(WorldFile file) {
 	}
 
 	@Override
-	public void merge(RenderEngine m) {
-		throw new IllegalStateException("Not concurrent");
+	public void startRender() throws IOException {
 	}
 
 	@Override
-	public boolean isConcurrent() {
-		return false;
+	public List<Runnable> filesKnown() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public void finishRender() throws IOException {
+	}
+
+	@Override
+	public void close() throws IOException {
 	}
 
 }

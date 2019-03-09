@@ -25,12 +25,12 @@ public class SimpleHTMLOutputRenderer extends SimpleRenderer {
 	private final String imageformat;
 	private boolean writingStyleSheets = false;
 
-	public SimpleHTMLOutputRenderer(RegionRenderer renderer, File out) {
-		this(renderer, out, "gif");
+	public SimpleHTMLOutputRenderer(File out) {
+		this(out, "gif");
 	}
 
-	public SimpleHTMLOutputRenderer(RegionRenderer renderer, File out, String imageformat) {
-		super(renderer);
+	public SimpleHTMLOutputRenderer(File out, String imageformat) {
+		super();
 		this.out = out;
 		this.imageformat = imageformat;
 	}
@@ -49,7 +49,8 @@ public class SimpleHTMLOutputRenderer extends SimpleRenderer {
 	}
 
 	@Override
-	protected void addImage(BufferedImage tile, int x, int z) throws IOException {
+	protected void addImage(BufferedImage tile, int dimension, int x, int z) throws IOException {
+		// TODO us edimension
 		if (!writingStyleSheets) {
 			writer.append("<style type=\"text/css\">");
 			writingStyleSheets = true;

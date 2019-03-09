@@ -5,7 +5,6 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
-import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache;
 import com.flowpowered.nbt.ByteTag;
 import com.flowpowered.nbt.CompoundMap;
 import com.flowpowered.nbt.CompoundTag;
@@ -27,6 +26,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
+import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache;
 import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache.TextureMapper;
 
 /**
@@ -62,6 +63,8 @@ public class FlatImageRenderer implements RegionRenderer {
 	 */
 	public static final int BLOCKS_IN_CHUNK_SECTION = CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE;
 
+	private static final boolean DEBUG = false;
+
 	private final TextureCache textures;
 	private final ChunkSection emptyChunkSection;
 
@@ -83,8 +86,8 @@ public class FlatImageRenderer implements RegionRenderer {
 	}
 
 	@Override
-	public BufferedImage renderFile(String fileName, InputStream input) throws IOException {
-		ChunkReader reader = new ChunkReader(input);
+	public BufferedImage renderFile(PreparedFile file) throws IOException {
+		ChunkReader reader = file.getChunkReader();
 
 		BufferedImage regionDetailImage = new BufferedImage(512 * IMAGE_SIZE, 512 * IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
 
@@ -100,7 +103,9 @@ public class FlatImageRenderer implements RegionRenderer {
 			int regionZ = calculateChunkPos(globalZ);
 
 			try {
-				System.out.println("Render chunk: " + regionX + "," + regionZ);
+				if (DEBUG) {
+					System.out.println("Render chunk: " + regionX + "," + regionZ);
+				}
 				renderChunk(levelTag, regionX, regionZ, regionDetailImage);
 			} catch (ExecutionException ex) {
 				throw new IOException(ex);
@@ -119,7 +124,7 @@ public class FlatImageRenderer implements RegionRenderer {
 
 	private void renderChunk(CompoundTag levelTag, int localX, int localZ, BufferedImage image) throws ExecutionException {
 		ListTag<?> sections = (ListTag<?>) levelTag.getValue().get("Sections");
-		if(sections == null) {
+		if (sections == null) {
 			return; // This is an empty chunk
 		}
 		ChunkSection[] chunkSections = new ChunkSection[MAX_CHUNK_SECTIONS];

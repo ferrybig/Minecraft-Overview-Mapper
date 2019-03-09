@@ -22,8 +22,8 @@ public class SimpleImageOutputRenderer extends SimpleRenderer {
 	private final Path outputDir;
 	private final Path images;
 
-	public SimpleImageOutputRenderer(RegionRenderer renderer, Path outputDir) {
-		super(renderer);
+	public SimpleImageOutputRenderer(Path outputDir) {
+		super();
 		this.outputDir = outputDir;
 		this.images = outputDir.resolve("tiles");
 	}
@@ -56,7 +56,8 @@ public class SimpleImageOutputRenderer extends SimpleRenderer {
 	}
 
 	@Override
-	protected void addImage(BufferedImage tile, int x, int z) throws IOException {
+	protected void addImage(BufferedImage tile, int dimension, int x, int z) throws IOException {
+		// todo use dimension
 		try (OutputStream out = Files.newOutputStream(getImageLocation(x, z))) {
 			ImageIO.write(tile, "png", out);
 		}

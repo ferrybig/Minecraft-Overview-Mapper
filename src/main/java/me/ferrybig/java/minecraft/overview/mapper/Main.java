@@ -10,14 +10,15 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import me.ferrybig.java.minecraft.overview.mapper.engine.SequentialEngine;
 import me.ferrybig.java.minecraft.overview.mapper.input.DirectoryInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.InputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.TarGzInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap;
 import me.ferrybig.java.minecraft.overview.mapper.render.ComplexImageOutputRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.FlatImageRenderer;
+import me.ferrybig.java.minecraft.overview.mapper.render.ImageWriter;
 import me.ferrybig.java.minecraft.overview.mapper.render.RegionRenderer;
-import me.ferrybig.java.minecraft.overview.mapper.render.RenderEngine;
 import me.ferrybig.java.minecraft.overview.mapper.render.SimpleHTMLOutputRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache;
 import me.ferrybig.java.minecraft.overview.mapper.textures.TextureParser;
@@ -68,32 +69,43 @@ public class Main {
 			return;
 		}
 
-		Path in = Paths.get(cmd.getOptionValue(input.getOpt()));
-		Path out = Paths.get(cmd.getOptionValue(output.getOpt()));
-
-		System.err.println("In: " + in.toAbsolutePath());
-		System.err.println("Out: " + out.toAbsolutePath());
-
+		System.out.println("Loading textures...");
 		TextureParser parser = new TextureParser();
 		parser.readAll(Arrays.asList(new File("C:\\Users\\Fernando\\AppData\\Roaming\\.minecraft\\versions\\1.13.2\\1.13.2.jar")));
+		final TextureCache textureCache = new TextureCache(parser);
 
-		RegionRenderer rend = new FlatImageRenderer(new TextureCache(parser), BiomeMap.loadDefault());
-
+		System.out.println("Initizing input system");
+		Path in = Paths.get(cmd.getOptionValue(input.getOpt()));
 		InputSource inputSource;
 		if (in.toAbsolutePath().toString().endsWith(".tar.gz")) {
 			inputSource = new TarGzInputSource(in.toFile());
 		} else {
-			inputSource = new DirectoryInputSource(in.toFile());
-		}
-		RenderEngine outputSource;
-		if (out.toAbsolutePath().toString().endsWith(".html")) {
-			outputSource = new SimpleHTMLOutputRenderer(rend, out.toFile(), "gif");
-		} else {
-			outputSource = new ComplexImageOutputRenderer(rend, out);
+			inputSource = new DirectoryInputSource(in);
 		}
 
-		System.err.println("In-type: " + inputSource.getClass());
-		System.err.println("Out-type: " + outputSource.getClass());
-		outputSource.forInputSource(inputSource, s -> System.out.println("Start:\t" + s), s -> System.out.println("End:\t" + s));
+		System.out.println("Initizing output system");
+		ImageWriter outputSource;
+		Path out = Paths.get(cmd.getOptionValue(output.getOpt()));
+		if (out.toAbsolutePath().toString().endsWith(".html")) {
+			outputSource = new SimpleHTMLOutputRenderer(out.toFile(), "gif");
+		} else {
+			outputSource = new ComplexImageOutputRenderer(out);
+		}
+
+		System.out.println("Initizing rendering system");
+		RegionRenderer renderer = new FlatImageRenderer(textureCache, BiomeMap.loadDefault());
+
+		System.out.println("Preparing engine...");
+		System.err.println("In-type: " + inputSource.getClass() + ": " + in.toAbsolutePath());
+		System.err.println("Render-type: " + renderer.getClass());
+		System.err.println("Out-type: " + outputSource.getClass() + ": " + out.toAbsolutePath());
+		SequentialEngine engine = new SequentialEngine(inputSource, renderer, outputSource);
+
+		System.out.println("Starting render...");
+		engine.render(
+			(s, p) -> System.out.println("Start:\t" + Math.round(p) + "\t" + s),
+			(s, p) -> System.out.println("End:\t" + Math.round(p) + "\t" + s)
+		);
+		System.out.println("Done!");
 	}
 }

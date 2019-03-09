@@ -46,7 +46,7 @@ public class ChunkReader implements Closeable {
 	private final ByteCountingDataInputStream in;
 	private byte[] dataCache = new byte[4 * KIBIBYTE];
 
-	ChunkReader(InputStream input) throws IOException {
+	public ChunkReader(InputStream input) throws IOException {
 		this.in = new ByteCountingDataInputStream(wrapWithBuffer(input));
 		this.chunkIndexes = new PriorityQueue<>(Integer::compare);
 		for (int k = 0; k < SECTOR_INTS; ++k) {

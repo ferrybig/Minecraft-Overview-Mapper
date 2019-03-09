@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
+import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
 import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap.Biome;
 import me.ferrybig.java.minecraft.overview.mapper.render.BlockMap.Block;
 import me.ferrybig.java.minecraft.overview.mapper.streams.ByteCountingDataInputStream;
@@ -54,8 +55,8 @@ public class DefaultImageRenderer implements RegionRenderer {
 	}
 
 	@Override
-	public BufferedImage renderFile(String fileName, InputStream input) throws IOException {
-		ByteCountingDataInputStream in = new ByteCountingDataInputStream(new BufferedInputStream(input, SECTOR_BYTES * 2));
+	public BufferedImage renderFile(PreparedFile file) throws IOException {
+		ByteCountingDataInputStream in = new ByteCountingDataInputStream(new BufferedInputStream(file.getInputstream(), SECTOR_BYTES * 2));
 		PriorityQueue<Integer> chunkIndexes = new PriorityQueue<>(
 			new Comparator<Integer>() {
 
