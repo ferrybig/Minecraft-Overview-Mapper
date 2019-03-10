@@ -36,7 +36,6 @@ public class DirectoryInputSource implements InputSource {
 				return FileVisitResult.CONTINUE;
 			}
 		});
-		files.forEach(System.out::println);
 		return new SimpleInputInfo(files) {
 			@Override
 			protected PreparedFile toPreparedFile(WorldFile file) throws IOException {
