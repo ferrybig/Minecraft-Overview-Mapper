@@ -6,7 +6,6 @@
 package me.ferrybig.java.minecraft.overview.mapper.engine;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import java.awt.image.BufferedImage;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,9 +22,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,6 +31,7 @@ import me.ferrybig.java.minecraft.overview.mapper.render.RegionRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.input.InputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.WorldFile;
 import me.ferrybig.java.minecraft.overview.mapper.render.ImageWriter;
+import me.ferrybig.java.minecraft.overview.mapper.render.RenderOutput;
 
 public class RenderEngine implements Closeable {
 
@@ -125,7 +122,7 @@ public class RenderEngine implements Closeable {
 	public void close() throws IOException {
 		ParallelOptions parallel = this.parallel;
 		if (parallel != null) {
-			if (parallel.isShouldShutdownPool()) {
+			if (parallel.shouldShutdownPool()) {
 				parallel.getPool().shutdown();
 			}
 		}
@@ -144,7 +141,14 @@ public class RenderEngine implements Closeable {
 	}
 
 	public void render() throws IOException {
-		try (InputInfo inputTask = this.files.generateFileListing()) {
+		RenderCache cacheInstance;
+		if (this.imageWriter.supportsCache()) {
+			cacheInstance = new RenderCache(this.imageWriter.cacheFile(), this.imageWriter.cacheBackupFile());
+		} else {
+			cacheInstance = null;
+		}
+
+		try (RenderCache cache = cacheInstance; InputInfo inputTask = this.files.generateFileListing()) {
 			System.out.println("Render start!");
 			imageWriter.startRender();
 
@@ -169,7 +173,7 @@ public class RenderEngine implements Closeable {
 					}
 				}
 			}
-			final InputInfo.FileConsumer infoConsumer = makeInfoConsumer(hasSendFullFileList, processedFiles, totalFiles);
+			final InputInfo.FileConsumer infoConsumer = makeInfoConsumer(hasSendFullFileList, processedFiles, totalFiles, cache);
 			final ParallelOptions parallelOptions = this.parallel;
 
 			if (parallelOptions == null) {
@@ -262,7 +266,8 @@ public class RenderEngine implements Closeable {
 	public InputInfo.FileConsumer makeInfoConsumer(
 		final boolean hasSendFullFileList,
 		final Set<WorldFile> processedFiles,
-		final int totalFiles
+		final int totalFiles,
+		final RenderCache cache
 	) {
 		return new InputInfo.FileConsumer() {
 			private final AtomicInteger processedFilesCount = new AtomicInteger();
@@ -278,22 +283,31 @@ public class RenderEngine implements Closeable {
 			}
 
 			@Override
-			public void consume(PreparedFile file) throws IOException {
+			public void consume(PreparedFile prepared) throws IOException {
+				final WorldFile file = prepared.getFile();
 				if (!hasSendFullFileList) {
-					imageWriter.addKnownFile(file.getFile());
-					processedFiles.add(file.getFile());
+					imageWriter.addKnownFile(file);
+					processedFiles.add(file);
 				} else {
-					assert processedFiles.contains(file.getFile());
+					assert processedFiles.contains(file);
 				}
-				RenderEngine.this.reporter.onFileStart(file.getFile());
-				switch (file.getFile().getType()) {
+				RenderEngine.this.reporter.onFileStart(file);
+				switch (file.getType()) {
 					case REGION_MCA: {
-						BufferedImage render = RenderEngine.this.renderer.renderFile(file);
-						RenderEngine.this.imageWriter.addFile(file.getFile(), render);
+						final String orignalName = file.getOrignalName();
+						int lastModification = cache.getLastModificationDate(orignalName);
+						RenderOutput render = RenderEngine.this.renderer.renderFile(prepared, lastModification);
+						if (render.getOutput() != null) {
+							RenderEngine.this.imageWriter.addFile(file, render.getOutput());
+							cache.storeLastModificationDate(orignalName, render.getLastModification());
+						} else {
+							System.out.println("Using file from cache: " + orignalName);
+							RenderEngine.this.imageWriter.addCachedFile(file);
+						}
 					}
 					break;
 					default: {
-						RenderEngine.this.imageWriter.addFile(file.getFile(), file);
+						RenderEngine.this.imageWriter.addFile(file, prepared);
 					}
 				}
 				int processed = processedFilesCount.incrementAndGet();
@@ -301,7 +315,7 @@ public class RenderEngine implements Closeable {
 					double progress = processed * 100d / totalFiles;
 					RenderEngine.this.reporter.onProgress(progress, processed, totalFiles);
 				}
-				RenderEngine.this.reporter.onFileEnd(file.getFile());
+				RenderEngine.this.reporter.onFileEnd(file);
 
 			}
 		};
@@ -320,7 +334,7 @@ public class RenderEngine implements Closeable {
 			this.pool = pool;
 		}
 
-		public boolean isShouldShutdownPool() {
+		public boolean shouldShutdownPool() {
 			return shouldShutdownPool;
 		}
 

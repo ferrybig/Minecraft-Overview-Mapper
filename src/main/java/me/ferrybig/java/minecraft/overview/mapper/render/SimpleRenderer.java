@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import me.ferrybig.java.minecraft.overview.mapper.input.WorldFile;
 
-public abstract class SimpleRenderer implements ImageWriter {
+public abstract class SimpleRenderer extends UncachedImageWriter {
 
 	@Override
 	public void addFile(WorldFile file, Object renderResult) throws IOException {

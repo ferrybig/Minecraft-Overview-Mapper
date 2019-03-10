@@ -55,7 +55,7 @@ public class DefaultImageRenderer implements RegionRenderer {
 	}
 
 	@Override
-	public BufferedImage renderFile(PreparedFile file) throws IOException {
+	public RenderOutput renderFile(PreparedFile file, int lastModified) throws IOException {
 		ByteCountingDataInputStream in = new ByteCountingDataInputStream(new BufferedInputStream(file.getInputstream(), SECTOR_BYTES * 2));
 		PriorityQueue<Integer> chunkIndexes = new PriorityQueue<>(
 			new Comparator<Integer>() {
@@ -140,7 +140,7 @@ public class DefaultImageRenderer implements RegionRenderer {
 		for (int k = 0; k < 512; k++) {
 			localBufferedImage.setRGB(0, k, 512, 1, imageColorArray, 512 * k, 512);
 		}
-		return localBufferedImage;
+		return new RenderOutput(localBufferedImage, Integer.MIN_VALUE);
 	}
 	private static final int KIBIBYTE = 1024;
 

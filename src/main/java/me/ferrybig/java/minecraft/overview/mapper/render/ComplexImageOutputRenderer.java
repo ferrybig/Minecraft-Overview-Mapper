@@ -13,23 +13,18 @@ import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
@@ -52,7 +47,7 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 	private final int normalRes = 512;
 	private final int halfRes = normalRes / 2;
 	private final int maxZoom;
-	 @Nullable
+	@Nullable
 	private final LayerConnector zoomLayer;
 
 	public ComplexImageOutputRenderer(@Nonnull Path outputDir) {
@@ -65,7 +60,7 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 		this.maxZoom = maxZoom;
 		{
 			LayerConnector zoomLayer = null;
-			for(int currentZoom = minZoom; currentZoom < this.normalZoom; currentZoom++) {
+			for (int currentZoom = minZoom; currentZoom < this.normalZoom; currentZoom++) {
 				zoomLayer = new LayerConnector(zoomLayer, currentZoom, 0);
 			}
 			this.zoomLayer = zoomLayer;
@@ -87,6 +82,28 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 			.resolve(Integer.toString(x) + "_" + Integer.toString(z) + ".gif");
 		Files.createDirectories(p.getParent());
 		return p;
+	}
+
+	@Override
+	public boolean supportsCache() {
+		return true;
+	}
+
+	@Override
+	public void addCachedFile(WorldFile file) throws IOException {
+		if (this.zoomLayer != null) {
+			this.zoomLayer.addRenderedFile(file.getX(), file.getZ());
+		}
+	}
+
+	@Override
+	public Path cacheFile() throws IOException {
+		return this.outputDir.resolve("render-cache.log");
+	}
+
+	@Override
+	public Path cacheBackupFile() throws IOException {
+		return this.outputDir.resolve("render-cache.bak.log");
 	}
 
 	@Override
@@ -143,7 +160,7 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 					break;
 				}
 			}
-			if(this.zoomLayer != null && dimension == 0) {
+			if (this.zoomLayer != null && dimension == 0) {
 				this.zoomLayer.addRenderedFile(x, z);
 			}
 		} finally {
@@ -159,7 +176,7 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 
 	@Override
 	public List<Runnable> filesKnown() {
-		if(this.zoomLayer != null) {
+		if (this.zoomLayer != null) {
 			return this.zoomLayer.finalizeKnownFiles();
 		} else {
 			return Collections.emptyList();
@@ -168,11 +185,9 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 
 	@Override
 	public void addKnownFile(WorldFile file) {
-		if(
-			this.zoomLayer != null &&
-			(file.getType() == Type.REGION_MCA || file.getType() == Type.REGION_MCR)
-			&& file.getDimension() == 0
-		) {
+		if (this.zoomLayer != null
+			&& (file.getType() == Type.REGION_MCA || file.getType() == Type.REGION_MCR)
+			&& file.getDimension() == 0) {
 			this.zoomLayer.addKnownFile(file.getX(), file.getZ());
 		}
 	}

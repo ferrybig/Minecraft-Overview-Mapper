@@ -45,11 +45,13 @@ public class ChunkReader implements Closeable {
 	private final PriorityQueue<Integer> chunkIndexes;
 	private final ByteCountingDataInputStream in;
 	private byte[] dataCache = new byte[4 * KIBIBYTE];
+	private final int[] timeStamps = new int[SECTOR_INTS];
+	private final int lastModificationDate;
 
 	public ChunkReader(InputStream input) throws IOException {
 		this.in = new ByteCountingDataInputStream(wrapWithBuffer(input));
 		this.chunkIndexes = new PriorityQueue<>(Integer::compare);
-		for (int k = 0; k < SECTOR_INTS; ++k) {
+		for (int i = 0; i < SECTOR_INTS; ++i) {
 			int offset = in.readInt();
 			if (offset != 0) {
 				int sectorNumber = offset >> 8;
@@ -57,8 +59,20 @@ public class ChunkReader implements Closeable {
 			}
 		}
 		assert this.in.getReadBytes() == SECTOR_BYTES;
-		this.skipFully(in, SECTOR_BYTES); // Skip timestamp sector
+		int lastModified = 0;
+		for (int i = 0; i < SECTOR_INTS; ++i) {
+			int timestamp = in.readInt();
+			timeStamps[i] = timestamp;
+			if (timestamp > lastModified) {
+				lastModified = timestamp;
+			}
+		}
+		this.lastModificationDate = lastModified;
 		assert this.in.getReadBytes() == SECTOR_BYTES * 2;
+	}
+
+	public int getLastModificationDate() {
+		return lastModificationDate;
 	}
 
 	@Override

@@ -8,18 +8,13 @@ package me.ferrybig.java.minecraft.overview.mapper.input;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
 public class ArchieveInputSource implements InputSource {
 
@@ -91,13 +86,13 @@ public class ArchieveInputSource implements InputSource {
 		ArchiveInputStream inWrapper;
 		try {
 			String baseName = file.getName();
-			if(baseName.endsWith(".tar.gz")) {
+			if (baseName.endsWith(".tar.gz")) {
 				inWrapper = new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.TAR, new GZIPInputStream(fos));
-			} else if(baseName.endsWith(".tar")) {
+			} else if (baseName.endsWith(".tar")) {
 				inWrapper = new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.TAR, fos);
-			} else if(baseName.endsWith(".zip")) {
+			} else if (baseName.endsWith(".zip")) {
 				inWrapper = new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.ZIP, fos);
-			} else if(baseName.endsWith(".7z")) {
+			} else if (baseName.endsWith(".7z")) {
 				inWrapper = new ArchiveStreamFactory().createArchiveInputStream(ArchiveStreamFactory.SEVEN_Z, fos);
 			} else {
 				throw new IOException("Unsupported archieve type! " + baseName);
@@ -120,16 +115,16 @@ public class ArchieveInputSource implements InputSource {
 			@Override
 			public void forAllFiles(InputInfo.FileConsumer consumer) throws IOException {
 				ArchiveEntry nextEntry;
-				while((nextEntry = in.getNextEntry()) != null) {
+				while ((nextEntry = in.getNextEntry()) != null) {
 					String fileName = nextEntry.getName();
-					if(!subDirectory.isEmpty()) {
-						if(!fileName.startsWith(subDirectory)) {
+					if (!subDirectory.isEmpty()) {
+						if (!fileName.startsWith(subDirectory)) {
 							continue;
 						}
 						fileName = fileName.substring(subDirectory.length() + 1);
 					}
 					WorldFile file = WorldFile.of(fileName);
-					if(!consumer.canConsume(file)) {
+					if (!consumer.canConsume(file)) {
 						continue;
 					}
 					consumer.consume(PreparedFile.of(file, in));

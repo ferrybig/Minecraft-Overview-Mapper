@@ -86,8 +86,11 @@ public class FlatImageRenderer implements RegionRenderer {
 	}
 
 	@Override
-	public BufferedImage renderFile(PreparedFile file) throws IOException {
+	public RenderOutput renderFile(PreparedFile file, int lastModified) throws IOException {
 		ChunkReader reader = file.getChunkReader();
+		if (lastModified != Integer.MIN_VALUE && lastModified >= reader.getLastModificationDate()) {
+			return new RenderOutput(null, lastModified);
+		}
 
 		BufferedImage regionDetailImage = new BufferedImage(512 * IMAGE_SIZE, 512 * IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
 		int[] dstPixels = new int[IMAGE_SIZE * IMAGE_SIZE];
@@ -112,7 +115,7 @@ public class FlatImageRenderer implements RegionRenderer {
 				throw new IOException(ex);
 			}
 		}
-		return regionDetailImage;
+		return new RenderOutput(regionDetailImage, reader.getLastModificationDate());
 	}
 
 	private static int calculateChunkPos(int rawChunkLocation) {
