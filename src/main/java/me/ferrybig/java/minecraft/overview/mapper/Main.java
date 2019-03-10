@@ -13,7 +13,7 @@ import java.util.Arrays;
 import me.ferrybig.java.minecraft.overview.mapper.engine.SequentialEngine;
 import me.ferrybig.java.minecraft.overview.mapper.input.DirectoryInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.InputSource;
-import me.ferrybig.java.minecraft.overview.mapper.input.TarGzInputSource;
+import me.ferrybig.java.minecraft.overview.mapper.input.ArchieveInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap;
 import me.ferrybig.java.minecraft.overview.mapper.render.ComplexImageOutputRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.FlatImageRenderer;
@@ -78,7 +78,7 @@ public class Main {
 		Path in = Paths.get(cmd.getOptionValue(input.getOpt()));
 		InputSource inputSource;
 		if (in.toAbsolutePath().toString().endsWith(".tar.gz")) {
-			inputSource = new TarGzInputSource(in.toFile());
+			inputSource = new ArchieveInputSource(in.toFile());
 		} else {
 			inputSource = new DirectoryInputSource(in);
 		}
