@@ -90,6 +90,7 @@ public class FlatImageRenderer implements RegionRenderer {
 		ChunkReader reader = file.getChunkReader();
 
 		BufferedImage regionDetailImage = new BufferedImage(512 * IMAGE_SIZE, 512 * IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
+		int[] dstPixels = new int[IMAGE_SIZE * IMAGE_SIZE];
 
 		// chunkStream comes from ChunkReader, closing is optional
 		InputStream chunkStream;
@@ -106,7 +107,7 @@ public class FlatImageRenderer implements RegionRenderer {
 				if (DEBUG) {
 					System.out.println("Render chunk: " + regionX + "," + regionZ);
 				}
-				renderChunk(levelTag, regionX, regionZ, regionDetailImage);
+				renderChunk(levelTag, regionX, regionZ, regionDetailImage, dstPixels);
 			} catch (ExecutionException ex) {
 				throw new IOException(ex);
 			}
@@ -122,7 +123,7 @@ public class FlatImageRenderer implements RegionRenderer {
 		return rawChunkLocation;
 	}
 
-	private void renderChunk(CompoundTag levelTag, int localX, int localZ, BufferedImage image) throws ExecutionException {
+	private void renderChunk(CompoundTag levelTag, int localX, int localZ, BufferedImage image, int[] dstPixels) throws ExecutionException {
 		ListTag<?> sections = (ListTag<?>) levelTag.getValue().get("Sections");
 		if (sections == null) {
 			return; // This is an empty chunk
@@ -171,6 +172,7 @@ public class FlatImageRenderer implements RegionRenderer {
 					int blockY = y % CHUNK_SECTION_SIZE;
 					ChunkSection s = chunkSections[sectionId];
 					if (s.isEmpty()) {
+						y -= 15;
 						continue;
 					}
 					TextureMapper block = s.getBlock(x, blockY, z);
@@ -181,7 +183,7 @@ public class FlatImageRenderer implements RegionRenderer {
 				}
 				//System.out.println("Blockcolumn at " + x + "," + z + " has min height " + y);
 
-				int[] dstPixels = new int[IMAGE_SIZE * IMAGE_SIZE];
+				Arrays.fill(dstPixels, 0);
 				for (; y <= maxY; y++) {
 					int sectionId = y / CHUNK_SECTION_SIZE;
 					int blockY = y % CHUNK_SECTION_SIZE;
@@ -206,7 +208,7 @@ public class FlatImageRenderer implements RegionRenderer {
 
 	}
 
-	private class ChunkSection {
+	private static class ChunkSection {
 
 		private final int blockPartSize;
 		private final long blockMask;

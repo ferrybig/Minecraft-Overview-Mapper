@@ -187,13 +187,22 @@ public class TextureCache {
 				if (aplha == 0xff) {
 					dstPixels[i] = srcPixels[i];
 				} else if (aplha != 0) {
-					Color color1 = new Color(dstPixels[i]);
-					Color color2 = new Color(srcPixels[i]);
+					int c1 = dstPixels[i];
+					int c2 = srcPixels[i];
+
+					int c1red = (c1 >> 16) & 0xff;
+					int c1green = (c1 >> 8) & 0xff;
+					int c1blue = (c1 >> 0) & 0xff;
+
+					int c2red = (c2 >> 16) & 0xff;
+					int c2green = (c2 >> 8) & 0xff;
+					int c2blue = (c2 >> 0) & 0xff;
+
 					float factor = aplha / 256f;
-					int red = (int) (color1.getRed() * (1 - factor) + color2.getRed() * factor);
-					int green = (int) (color1.getGreen() * (1 - factor) + color2.getGreen() * factor);
-					int blue = (int) (color1.getBlue() * (1 - factor) + color2.getBlue() * factor);
-					dstPixels[i] = new Color(red, green, blue).getRGB();
+					int red = (int) (c1red * (1 - factor) + c2red * factor);
+					int green = (int) (c1green * (1 - factor) + c2green * factor);
+					int blue = (int) (c1blue * (1 - factor) + c2blue * factor);
+					dstPixels[i] = (red << 16) | (green << 8) | blue;
 				}
 			}
 		}
