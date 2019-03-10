@@ -10,10 +10,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import me.ferrybig.java.minecraft.overview.mapper.engine.SequentialEngine;
+import me.ferrybig.java.minecraft.overview.mapper.engine.AbstractProgressReporter;
+import me.ferrybig.java.minecraft.overview.mapper.engine.RenderEngine;
+import me.ferrybig.java.minecraft.overview.mapper.engine.RenderOptions;
 import me.ferrybig.java.minecraft.overview.mapper.input.DirectoryInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.InputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.ArchieveInputSource;
+import me.ferrybig.java.minecraft.overview.mapper.input.WorldFile;
 import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap;
 import me.ferrybig.java.minecraft.overview.mapper.render.ComplexImageOutputRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.FlatImageRenderer;
@@ -99,13 +102,27 @@ public class Main {
 		System.err.println("In-type: " + inputSource.getClass() + ": " + in.toAbsolutePath());
 		System.err.println("Render-type: " + renderer.getClass());
 		System.err.println("Out-type: " + outputSource.getClass() + ": " + out.toAbsolutePath());
-		SequentialEngine engine = new SequentialEngine(inputSource, renderer, outputSource);
+		final AbstractProgressReporter progressReporter = new AbstractProgressReporter() {
+			@Override
+			public void onFileStart(WorldFile file) {
+				System.out.println("Start:\t" + file.getOrignalName());
+			}
+
+			@Override
+			public void onFileEnd(WorldFile file) {
+				System.out.println("End:\t" + file.getOrignalName());
+			}
+
+			@Override
+			public void onProgress(double progress, int processed, int total) {
+				System.out.println("Progress:\t" + progress + "%");
+			}
+
+		};
+		RenderEngine engine = RenderEngine.parellel(new RenderOptions(inputSource, renderer, outputSource, progressReporter), 4);
 
 		System.out.println("Starting render...");
-		engine.render(
-			(s, p) -> System.out.println("Start:\t" + Math.round(p) + "\t" + s),
-			(s, p) -> System.out.println("End:\t" + Math.round(p) + "\t" + s)
-		);
+		engine.render();
 		System.out.println("Done!");
 	}
 }
