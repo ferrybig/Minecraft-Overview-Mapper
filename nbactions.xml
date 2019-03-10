@@ -14,4 +14,12 @@
                 <exec.executable>java</exec.executable>
             </properties>
         </action>
+        <action>
+            <actionName>CUSTOM-spotbugs</actionName>
+            <displayName>spotbugs</displayName>
+            <goals>
+                <goal>com.github.spotbugs:spotbugs-maven-plugin:check</goal>
+                <goal>com.github.spotbugs:spotbugs-maven-plugin:gui</goal>
+            </goals>
+        </action>
     </actions>
