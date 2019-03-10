@@ -53,7 +53,7 @@ public class AndVariantSpecifier implements VariantSpecifier {
 
 	@Override
 	public String toString() {
-		return "CombinedVariantSpecifier{" + "specifiers=" + specifiers + '}';
+		return "CombinedVariantSpecifier{" + "specifiers=" + Arrays.toString(specifiers) + '}';
 	}
 
 }

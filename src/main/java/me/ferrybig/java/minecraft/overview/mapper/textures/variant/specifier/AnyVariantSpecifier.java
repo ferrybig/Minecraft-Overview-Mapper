@@ -64,7 +64,7 @@ public class AnyVariantSpecifier implements VariantSpecifier {
 
 	@Override
 	public String toString() {
-		return "AnyVariantSpecifier{" + "key=" + key + ", values=" + values + '}';
+		return "AnyVariantSpecifier{" + "key=" + key + ", values=" + Arrays.toString(values) + '}';
 	}
 
 }
