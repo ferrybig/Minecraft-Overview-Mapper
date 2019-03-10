@@ -33,7 +33,7 @@ public class TextureCache {
 
 	public TextureCache(TextureParser parser) {
 		this.cache = CacheBuilder.newBuilder()
-			.maximumSize(1000)
+			.maximumSize(256)
 			.build(new CacheLoader<TextureKey, TextureMapper>() {
 				@Override
 				public TextureMapper load(TextureKey key) throws IOException {
