@@ -31,8 +31,8 @@ public class SequentialEngine {
 		switch (o1.getType()) {
 			case REGION_MCA:
 				return Integer.compare(
-					Math.abs(o1.getX()) + Math.abs(o1.getZ()),
-					Math.abs(o2.getX()) + Math.abs(o2.getZ())
+					Math.max(Math.abs(o1.getX()), Math.abs(o1.getZ())),
+					Math.max(Math.abs(o2.getX()), Math.abs(o2.getZ()))
 				);
 			default:
 				return 0; // No specific order
@@ -78,9 +78,9 @@ public class SequentialEngine {
 					hasSendFullFileList = false;
 				} else {
 					System.out.println("We have a full list of files! " + fileNames.size());
-					imageWriter.addKnownFiles(fileNames);
 					processedFiles = fileNames.stream().filter(this::canConsume).collect(Collectors.toSet());
-					totalFiles = fileNames.size();
+					imageWriter.addKnownFiles(processedFiles);
+					totalFiles = processedFiles.size();
 					hasSendFullFileList = true;
 					for (Runnable run : imageWriter.filesKnown()) {
 						run.run();
