@@ -92,7 +92,7 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 	@Override
 	public void addCachedFile(WorldFile file) throws IOException {
 		if (this.zoomLayer != null) {
-			this.zoomLayer.addRenderedFile(file.getX(), file.getZ());
+			this.zoomLayer.addCachedFile(file.getX(), file.getZ());
 		}
 	}
 
@@ -263,25 +263,56 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 			this.dimension = dimension;
 		}
 
+		@Nonnull
+		private ImageEntry computeEntry(int x, int z) {
+			return new ImageEntry(Math.floorDiv(x, 2), Math.floorDiv(z, 2));
+		}
+
+		@Nonnull
+		private CoordinateData getData(int x, int z) {
+			return getData(computeEntry(x, z));
+		}
+
+		@Nonnull
+		private CoordinateData getData(@Nonnull ImageEntry key) {
+			return images.computeIfAbsent(key, COORDINATE_DATA_FACTORY);
+		}
+
 		public void addKnownFile(int x, int z) {
-			ImageEntry key = new ImageEntry(Math.floorDiv(x, 2), Math.floorDiv(z, 2));
-			CoordinateData data = images.computeIfAbsent(key, COORDINATE_DATA_FACTORY);
+			ImageEntry key = computeEntry(x, z);
+			CoordinateData data = getData(key);
 			int oldKnown = data.known.getAndIncrement();
 			if (oldKnown == 0 && topLayer != null) {
 				topLayer.addKnownFile(key.getX(), key.getZ());
 			}
 		}
 
+		public void addCachedFile(int x, int z) throws IOException {
+			this.addFile(x, z, true);
+		}
+
 		public void addRenderedFile(int x, int z) throws IOException {
-			ImageEntry key = new ImageEntry(Math.floorDiv(x, 2), Math.floorDiv(z, 2));
-			CoordinateData data = images.computeIfAbsent(key, COORDINATE_DATA_FACTORY);
+			this.addFile(x, z, false);
+		}
+
+		private void addFile(int x, int z, boolean cached) throws IOException {
+			ImageEntry key = computeEntry(x, z);
+			CoordinateData data = getData(key);
+			int cachedValue;
+			if (cached) {
+				cachedValue = data.cached.incrementAndGet();
+			} else {
+				cachedValue = 0;
+				// this is techinacally not correct, but if 1 file is not cached,
+				// it really doesn't matter since we are going to render the tile now
+			}
 			int newRendered = data.rendered.incrementAndGet();
 			int known = data.known.get();
 			if (DEBUG) {
 				System.out.println("Render status of zoom " + zoom + " tile " + key.getX() + "," + key.getZ() + ": " + newRendered + "/" + known);
 			}
 			if (allFilesKnown && newRendered == known) {
-				renderTile(key.getX(), key.getZ(), known);
+				renderTile(key.getX(), key.getZ(), known, cachedValue == newRendered);
 			}
 		}
 
@@ -301,9 +332,12 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 					int tileX = key.getX();
 					int tileZ = key.getZ();
 					int known = data.known.get();
+					int rendered = data.rendered.get();
+					int cached = data.cached.get();
+					boolean fullyCached = rendered == cached;
 					tasks.add(() -> {
 						try {
-							renderTile(tileX, tileZ, known);
+							renderTile(tileX, tileZ, known, fullyCached);
 						} catch (IOException ex) {
 							throw new UncheckedIOException(ex);
 						}
@@ -315,53 +349,59 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 			}
 		}
 
-		private void renderTile(int tileX, int tileZ, int known) throws IOException {
-			BufferedImage renderResult = new BufferedImage(normalRes, normalRes, BufferedImage.TYPE_INT_ARGB);
-			Graphics2D g2 = renderResult.createGraphics();
-			g2.setComposite(AlphaComposite.Src);
-			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-			try {
-				int found = 0;
-				for (int x = 0; x < 2; x++) {
-					for (int z = 0; z < 2; z++) {
-						try (InputStream in = Files.newInputStream(getImageLocation(
-							dimension,
-							zoom + 1,
-							tileX * 2 + x,
-							tileZ * 2 + z
-						))) {
-							final BufferedImage img = ImageIO.read(in);
-							g2.drawImage(
-								img,
-								x * halfRes, z * halfRes,
-								x * halfRes + halfRes, z * halfRes + halfRes,
-								0, 0,
-								normalRes, normalRes,
-								null
-							);
-							found++;
-						} catch (FileNotFoundException | NoSuchFileException ignore) {
+		private void renderTile(int tileX, int tileZ, int known, boolean fullyCached) throws IOException {
+			if (!fullyCached) {
+				BufferedImage renderResult = new BufferedImage(normalRes, normalRes, BufferedImage.TYPE_INT_ARGB);
+				Graphics2D g2 = renderResult.createGraphics();
+				g2.setComposite(AlphaComposite.Src);
+				g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+				try {
+					int found = 0;
+					for (int x = 0; x < 2; x++) {
+						for (int z = 0; z < 2; z++) {
+							try (InputStream in = Files.newInputStream(getImageLocation(
+								dimension,
+								zoom + 1,
+								tileX * 2 + x,
+								tileZ * 2 + z
+							))) {
+								final BufferedImage img = ImageIO.read(in);
+								g2.drawImage(
+									img,
+									x * halfRes, z * halfRes,
+									x * halfRes + halfRes, z * halfRes + halfRes,
+									0, 0,
+									normalRes, normalRes,
+									null
+								);
+								found++;
+							} catch (FileNotFoundException | NoSuchFileException ignore) {
+							}
 						}
 					}
+					assert found > 0 : "At least 1 image should exist in the layer, otherwise this entry should have never existed in this set";
+					assert known >= found : "We rendered atleast " + known + " known tiles, we we only found " + found + " when rendering";
+					final Path imageLocation = getImageLocation(
+						dimension,
+						zoom,
+						tileX,
+						tileZ
+					);
+					if (DEBUG) {
+						System.err.println("Rendering zoom level " + zoom + ", tile: " + tileX + ", " + tileZ + " (" + found + "/" + known + ")");
+						System.err.println(imageLocation);
+					}
+					ImageIO.write(renderResult, "gif", imageLocation.toFile());
+				} finally {
+					g2.dispose();
 				}
-				assert found > 0 : "At least 1 image should exist in the layer, otherwise this entry should have never existed in this set";
-				assert known >= found : "We rendered atleast " + known + " known tiles, we we only found " + found + " when rendering";
-				final Path imageLocation = getImageLocation(
-					dimension,
-					zoom,
-					tileX,
-					tileZ
-				);
-				if (DEBUG) {
-					System.err.println("Rendering zoom level " + zoom + ", tile: " + tileX + ", " + tileZ + " (" + found + "/" + known + ")");
-					System.err.println(imageLocation);
-				}
-				ImageIO.write(renderResult, "gif", imageLocation.toFile());
-			} finally {
-				g2.dispose();
 			}
 			if (this.topLayer != null) {
-				this.topLayer.addRenderedFile(tileX, tileZ);
+				if(fullyCached) {
+					this.topLayer.addCachedFile(tileX, tileZ);
+				} else {
+					this.topLayer.addRenderedFile(tileX, tileZ);
+				}
 			}
 		}
 
@@ -369,15 +409,14 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 
 	private static class CoordinateData {
 
-		private static final CoordinateData FINISHED_CORDINATE_DATA = new CoordinateData();
-
-		static {
-			FINISHED_CORDINATE_DATA.known.set(4);
-			FINISHED_CORDINATE_DATA.rendered.set(4);
-		}
-
 		private final AtomicInteger rendered = new AtomicInteger();
 		private final AtomicInteger known = new AtomicInteger();
+		private final AtomicInteger cached = new AtomicInteger();
+
+		@Override
+		public String toString() {
+			return "CoordinateData{" + "rendered=" + rendered + ", known=" + known + ", cached=" + cached + '}';
+		}
 	}
 
 }
