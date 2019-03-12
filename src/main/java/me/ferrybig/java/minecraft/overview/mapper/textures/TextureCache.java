@@ -202,7 +202,7 @@ public class TextureCache {
 					int red = (int) (c1red * (1 - factor) + c2red * factor);
 					int green = (int) (c1green * (1 - factor) + c2green * factor);
 					int blue = (int) (c1blue * (1 - factor) + c2blue * factor);
-					dstPixels[i] = (red << 16) | (green << 8) | blue;
+					dstPixels[i] = (0xff << 24) | (red << 16) | (green << 8) | blue;
 				}
 			}
 		}
