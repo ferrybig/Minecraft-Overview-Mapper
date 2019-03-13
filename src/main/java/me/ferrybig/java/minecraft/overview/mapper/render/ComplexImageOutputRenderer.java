@@ -17,6 +17,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -112,7 +113,12 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 
 	@Override
 	public void startRender() throws IOException {
-		Files.createDirectories(outputDir);
+		Files.createDirectories(this.outputDir);
+		Files.copy(
+			this.getClass().getResourceAsStream("ComplexImageOutputRenderer.html"),
+			this.outputDir.resolve("index.html"),
+			StandardCopyOption.REPLACE_EXISTING
+		);
 	}
 
 	@Override
