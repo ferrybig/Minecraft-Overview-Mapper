@@ -54,6 +54,7 @@ public class RenderCache implements Closeable {
 			Files.delete(backupFile);
 		}
 		this.entries = new ConcurrentHashMap<>(entries);
+		Files.createDirectories(normalFile.getParent());
 		this.writer = Files.newBufferedWriter(normalFile, StandardCharsets.UTF_8, StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
 	}
 
