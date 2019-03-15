@@ -2,6 +2,7 @@
 <title>Map renderer of a Minecraft world</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet-hash@0.2.1/leaflet-hash.js" integrity="sha384-2V+X2eD8Nz+G+FVKmPS5XkcMt40qrSGaHSoV8Ny7VAvPnHMfnLgrZ6qvNZVJ2ycb" crossorigin="anonymous"></script>
 <style>
 	html, body {
 		height: 100%;
@@ -48,6 +49,7 @@
 			center: [0, 0],
 			zoom: 10,
 			maxZoom: 15,
+			minZoom: 1,
 		});
 
 		L.tileLayer('complex-tiles/DIM0/{z}/{x}_{y}.gif', {
@@ -56,6 +58,7 @@
 			maxNativeZoom: L.Browser.retina ? 13 : 14,
 		}).addTo(map);
 		L.control.scale().addTo(map);
+		var hash = new L.Hash(map);
 		return map;
 	})();
 </script>
