@@ -81,10 +81,10 @@ public class RenderEngine implements Closeable {
 	}
 
 	public static RenderEngine parellel(@Nonnull RenderOptions options, int maxTasks) {
-		return parellel(options, maxTasks, true);
+		return parellel(options, maxTasks, Thread.MIN_PRIORITY);
 	}
 
-	public static RenderEngine parellel(@Nonnull RenderOptions options, int maxTasks, boolean lowPriority) {
+	public static RenderEngine parellel(@Nonnull RenderOptions options, int maxTasks, int priority) {
 		return parellel(options, maxTasks, new ThreadFactory() {
 
 			private final ThreadFactory parent = Executors.defaultThreadFactory();
@@ -95,8 +95,8 @@ public class RenderEngine implements Closeable {
 				Thread thread = parent.newThread(r);
 				int myId = id.getAndIncrement();
 				thread.setName("Render-engine-" + myId);
-				if (lowPriority) {
-					thread.setPriority(Thread.NORM_PRIORITY - 1);
+				if (priority != thread.getPriority()) {
+					thread.setPriority(priority);
 				}
 				thread.setDaemon(true);
 				return thread;
