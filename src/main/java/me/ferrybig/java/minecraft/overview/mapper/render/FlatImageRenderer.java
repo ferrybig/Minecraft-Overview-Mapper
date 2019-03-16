@@ -56,14 +56,77 @@ public class FlatImageRenderer implements RegionRenderer {
 	/**
 	 * Amount of bits in a long object
 	 */
-	public static final int LONG_SIZE = 64;
+	private static final int LONG_SIZE = 64;
 
 	/**
 	 * Amount of blocks in a chunk section
 	 */
-	public static final int BLOCKS_IN_CHUNK_SECTION = CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE;
+	private static final int BLOCKS_IN_CHUNK_SECTION = CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE;
+	private static final int TOTAL_IMAGE_SIZE = IMAGE_SIZE * IMAGE_SIZE;
+	private static final int BLOCKS_IN_REGION = 512;
+	private static final int BLOCKS_IN_REGION_MINUS_ONE = BLOCKS_IN_REGION - 1;
+	private static final int PIXELS_IN_REGION = BLOCKS_IN_REGION * IMAGE_SIZE;
+	private static final int TOTAL_BLOCKS_IN_REGION = BLOCKS_IN_REGION * BLOCKS_IN_REGION;
+	private static final int CHUNKS_IN_REGION = 32;
 
 	private static final boolean DEBUG = false;
+
+	private static int clampToByte(int val) {
+		return val > 255 ? 255 : val < 0 ? 0 : val;
+	}
+
+	private static void shade(int[] pixelArray, int shade) {
+		for (int i = 0; i < pixelArray.length; i++) {
+			int c1 = pixelArray[i];
+
+			int aplha = c1 & 0xff000000; // optimalize by not shifting this
+			if (aplha != 0) {
+				int red = clampToByte(((c1 >> 16) & 0xff) + shade);
+				int green = clampToByte(((c1 >> 8) & 0xff) + shade);
+				int blue = clampToByte(((c1 >> 0) & 0xff) + shade);
+
+				pixelArray[i] = aplha | (red << 16) | (green << 8) | blue;
+			}
+		}
+	}
+
+	private static void shadeChunks(int[] dstPixelsCache, byte[] heights, BufferedImage image) {
+		for (int x = 0; x < BLOCKS_IN_REGION; x++) {
+			int partialHeightIndex = x * BLOCKS_IN_REGION;
+			for (int z = 0; z < BLOCKS_IN_REGION; z++) {
+				int heightIndex = partialHeightIndex + z;
+				int xAxisShade;
+				if (x == 0) {
+					xAxisShade = heights[heightIndex + BLOCKS_IN_REGION] - heights[heightIndex];
+				} else if (x == BLOCKS_IN_REGION_MINUS_ONE) {
+					xAxisShade = heights[heightIndex] - heights[heightIndex - BLOCKS_IN_REGION];
+				} else {
+					xAxisShade = (heights[heightIndex + BLOCKS_IN_REGION] - heights[heightIndex - BLOCKS_IN_REGION]) * 2;
+				}
+				int zAxisShade;
+				if (z == 0) {
+					zAxisShade = heights[heightIndex + 1] - heights[heightIndex];
+				} else if (z == BLOCKS_IN_REGION_MINUS_ONE) {
+					zAxisShade = heights[heightIndex] - heights[heightIndex - 1];
+				} else {
+					zAxisShade = (heights[heightIndex + 1] - heights[heightIndex - 1]) * 2;
+				}
+				int totalShade = xAxisShade + zAxisShade;
+				if (totalShade != 0) {
+					if (totalShade > 10) {
+						totalShade = 10;
+					}
+					if (totalShade < -10) {
+						totalShade = -10;
+					}
+					image.getRaster().getDataElements(x * IMAGE_SIZE, z * IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE, dstPixelsCache);
+					double adjustedShade = totalShade / 7.0D * 8;
+					shade(dstPixelsCache, (int) adjustedShade);
+					image.getRaster().setDataElements(x * IMAGE_SIZE, z * IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE, dstPixelsCache);
+				}
+			}
+		}
+	}
 
 	private final TextureCache textures;
 	private final ChunkSection emptyChunkSection;
@@ -92,8 +155,11 @@ public class FlatImageRenderer implements RegionRenderer {
 			return new RenderOutput(null, lastModified);
 		}
 
-		BufferedImage regionDetailImage = new BufferedImage(512 * IMAGE_SIZE, 512 * IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
-		int[] dstPixels = new int[IMAGE_SIZE * IMAGE_SIZE];
+		BufferedImage regionDetailImage = new BufferedImage(PIXELS_IN_REGION, BLOCKS_IN_REGION * IMAGE_SIZE, BufferedImage.TYPE_INT_ARGB);
+		int[] dstPixelsCache = new int[TOTAL_IMAGE_SIZE];
+		ChunkSection[] chunkSectionCache = new ChunkSection[MAX_CHUNK_SECTIONS];
+		byte[] heights = new byte[TOTAL_BLOCKS_IN_REGION];
+		Arrays.fill(heights, Byte.MIN_VALUE);
 
 		// chunkStream comes from ChunkReader, closing is optional
 		InputStream chunkStream;
@@ -110,11 +176,12 @@ public class FlatImageRenderer implements RegionRenderer {
 				if (DEBUG) {
 					System.out.println("Render chunk: " + regionX + "," + regionZ);
 				}
-				renderChunk(levelTag, regionX, regionZ, regionDetailImage, dstPixels);
+				renderChunk(levelTag, regionX, regionZ, regionDetailImage, heights, dstPixelsCache, chunkSectionCache);
 			} catch (ExecutionException ex) {
 				throw new IOException(ex);
 			}
 		}
+		FlatImageRenderer.shadeChunks(dstPixelsCache, heights, regionDetailImage);
 		return new RenderOutput(regionDetailImage, reader.getLastModificationDate());
 	}
 
@@ -126,12 +193,24 @@ public class FlatImageRenderer implements RegionRenderer {
 		return rawChunkLocation;
 	}
 
-	private void renderChunk(CompoundTag levelTag, int localX, int localZ, BufferedImage image, int[] dstPixels) throws ExecutionException {
+	private void renderChunk(
+		CompoundTag levelTag,
+		int localX,
+		int localZ,
+		BufferedImage image,
+		byte[] heights,
+		int[] dstPixelsCache,
+		ChunkSection[] chunkSections
+	) throws ExecutionException {
 		ListTag<?> sections = (ListTag<?>) levelTag.getValue().get("Sections");
 		if (sections == null) {
 			return; // This is an empty chunk
 		}
-		ChunkSection[] chunkSections = new ChunkSection[MAX_CHUNK_SECTIONS];
+		int maxY = this.createChunkPallete(sections, chunkSections);
+		FlatImageRenderer.renderChunkBlocks(localX, localZ, maxY, image, chunkSections, heights, dstPixelsCache);
+	}
+
+	private int createChunkPallete(ListTag<?> sections, ChunkSection[] chunkSections) throws ExecutionException {
 		Arrays.fill(chunkSections, this.emptyChunkSection);
 		int maxY = 0;
 		for (Object section : sections.getValue()) {
@@ -166,9 +245,16 @@ public class FlatImageRenderer implements RegionRenderer {
 				false
 			);
 		}
+		return maxY;
+	}
+
+	private static void renderChunkBlocks(int localX, int localZ, int maxY, BufferedImage image, ChunkSection[] chunkSections, byte[] heights, int[] dstPixels) {
 		//System.out.println("CHunk at " + localX + "," + localZ + " has max height " + maxY);
 		for (int x = 0; x < CHUNK_SECTION_SIZE; x++) {
+			int partialHeightMapIndex = (localX * CHUNK_SECTION_SIZE + x) * BLOCKS_IN_REGION;
 			for (int z = 0; z < CHUNK_SECTION_SIZE; z++) {
+				int fullHeightMapIndex = partialHeightMapIndex + localZ * CHUNK_SECTION_SIZE + z;
+				boolean hasCutOffHeightMap = false;
 				int y = maxY;
 				for (; y > 0; y--) {
 					int sectionId = y / CHUNK_SECTION_SIZE;
@@ -183,6 +269,13 @@ public class FlatImageRenderer implements RegionRenderer {
 					if (block.isOpaque()) {
 						break;
 					}
+					if (!hasCutOffHeightMap && block.cutOffHeightMap()) {
+						heights[fullHeightMapIndex] = (byte) (y - 128);
+						hasCutOffHeightMap = true;
+					}
+				}
+				if (!hasCutOffHeightMap) {
+					heights[fullHeightMapIndex] = (byte) (y - 128);
 				}
 				//System.out.println("Blockcolumn at " + x + "," + z + " has min height " + y);
 
@@ -197,18 +290,14 @@ public class FlatImageRenderer implements RegionRenderer {
 					TextureMapper block = s.getBlock(x, blockY, z);
 					block.apply(dstPixels);
 				}
-				image.setRGB(
-					(x + localX * CHUNK_SECTION_SIZE) * IMAGE_SIZE,
+				image.getRaster().setDataElements((x + localX * CHUNK_SECTION_SIZE) * IMAGE_SIZE,
 					(z + localZ * CHUNK_SECTION_SIZE) * IMAGE_SIZE,
 					IMAGE_SIZE,
 					IMAGE_SIZE,
-					dstPixels,
-					0,
-					IMAGE_SIZE
+					dstPixels
 				);
 			}
 		}
-
 	}
 
 	private static class ChunkSection {

@@ -57,8 +57,16 @@ public class Main {
 			.longOpt("output")
 			.build();
 
+		Option sequentional = Option
+			.builder("s")
+			.argName("sequentional")
+			.desc("Output file/folder")
+			.longOpt("sequentional")
+			.build();
+
 		options.addOption(input);
 		options.addOption(output);
+		options.addOption(sequentional);
 
 		CommandLineParser cmdParser = new DefaultParser();
 		CommandLine cmd;
@@ -119,7 +127,14 @@ public class Main {
 			}
 
 		};
-		RenderEngine engine = RenderEngine.parellel(new RenderOptions(inputSource, renderer, outputSource, progressReporter), 4);
+		final RenderOptions renderOptions = new RenderOptions(inputSource, renderer, outputSource, progressReporter);
+
+		RenderEngine engine;
+		if (cmd.hasOption(sequentional.getOpt())) {
+			engine = RenderEngine.sequential(renderOptions);
+		} else {
+			engine = RenderEngine.parellel(renderOptions, Runtime.getRuntime().availableProcessors());
+		}
 
 		System.out.println("Starting render...");
 		engine.render();

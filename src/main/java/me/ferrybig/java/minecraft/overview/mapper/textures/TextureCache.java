@@ -26,6 +26,7 @@ public class TextureCache {
 
 	private static final int IMAGE_SIZE = 16;
 	private static final int IMAGE_SIZE_SQUARED = IMAGE_SIZE * IMAGE_SIZE;
+	private static final int IMAGE_SIZE_SQUARED_HALF = IMAGE_SIZE_SQUARED / 2;
 	private static final Color WATER_COLOR = new Color(0, 38, 248, 0);
 	private static final Color GRASS_COLOR = new Color(10, 128, 20, 0);
 
@@ -106,11 +107,12 @@ public class TextureCache {
 					assert 0 <= fullyTransparantPixels;
 					boolean isFullyTransparant = fullyTransparantPixels == IMAGE_SIZE_SQUARED;
 					boolean containsTransparancy = transparantPixels != 0;
+					boolean heightMapCutOff = fullyTransparantPixels == 0;
 
 					if (isFullyTransparant) {
 						return EmptyTextureMapper.INSTANCE;
 					} else if (containsTransparancy) {
-						return new TransparantTextureMapper(image, key.getBlock());
+						return new TransparantTextureMapper(image, key.getBlock(), heightMapCutOff);
 					} else {
 						return new SolidTextureMapper(image, key.getBlock());
 					}
@@ -140,6 +142,8 @@ public class TextureCache {
 
 		boolean isOpaque();
 
+		boolean cutOffHeightMap();
+
 		void apply(int[] dstPixels);
 
 		String getBlock();
@@ -159,6 +163,11 @@ public class TextureCache {
 		}
 
 		@Override
+		public boolean cutOffHeightMap() {
+			return false;
+		}
+
+		@Override
 		public String toString() {
 			return "EmptyTextureMapper{" + '}';
 		}
@@ -172,12 +181,20 @@ public class TextureCache {
 
 	private static class TransparantTextureMapper implements TextureMapper {
 
+		private final boolean heightMapCutOff;
+
 		private final int[] srcPixels;
 		private final String block;
 
-		public TransparantTextureMapper(BufferedImage image, String block) {
+		public TransparantTextureMapper(BufferedImage image, String block, boolean heightMapCutOff) {
 			this.srcPixels = image.getRGB(0, 0, IMAGE_SIZE, IMAGE_SIZE, null, 0, IMAGE_SIZE);
 			this.block = block;
+			this.heightMapCutOff = heightMapCutOff;
+		}
+
+		@Override
+		public boolean cutOffHeightMap() {
+			return heightMapCutOff;
 		}
 
 		@Override
@@ -232,6 +249,11 @@ public class TextureCache {
 		public SolidTextureMapper(BufferedImage image, String block) {
 			this.srcPixels = image.getRGB(0, 0, IMAGE_SIZE, IMAGE_SIZE, null, 0, IMAGE_SIZE);
 			this.block = block;
+		}
+
+		@Override
+		public boolean cutOffHeightMap() {
+			return true;
 		}
 
 		@Override

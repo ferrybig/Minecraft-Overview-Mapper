@@ -403,7 +403,7 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 				}
 			}
 			if (this.topLayer != null) {
-				if(fullyCached) {
+				if (fullyCached) {
 					this.topLayer.addCachedFile(tileX, tileZ);
 				} else {
 					this.topLayer.addRenderedFile(tileX, tileZ);
