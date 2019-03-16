@@ -242,29 +242,29 @@ public class DefaultImageRenderer implements RegionRenderer {
 		}
 	}
 
-	private static void shade(short[] imageColorArray, int[] imageShadeArray) {
+	private static void shade(short[] heights, int[] colors) {
 		int i = 512;
 		int j = 512;
 
 		int k = 0;
 		for (int m = 0; m < j; m++) {
 			for (int n = 0; n < i; k++) {
-				if (imageShadeArray[k] != 0) {
+				if (colors[k] != 0) {
 					float f1;
 					if (n == 0) {
-						f1 = imageColorArray[(k + 1)] - imageColorArray[k];
+						f1 = heights[(k + 1)] - heights[k];
 					} else if (n == i - 1) {
-						f1 = imageColorArray[k] - imageColorArray[(k - 1)];
+						f1 = heights[k] - heights[(k - 1)];
 					} else {
-						f1 = (imageColorArray[(k + 1)] - imageColorArray[(k - 1)]) * 2;
+						f1 = (heights[(k + 1)] - heights[(k - 1)]) * 2;
 					}
 					float f2;
 					if (m == 0) {
-						f2 = imageColorArray[(k + i)] - imageColorArray[k];
+						f2 = heights[(k + i)] - heights[k];
 					} else if (m == j - 1) {
-						f2 = imageColorArray[k] - imageColorArray[(k - i)];
+						f2 = heights[k] - heights[(k - i)];
 					} else {
-						f2 = (imageColorArray[(k + i)] - imageColorArray[(k - i)]) * 2;
+						f2 = (heights[(k + i)] - heights[(k - i)]) * 2;
 					}
 					float f3 = f1 + f2;
 					if (f3 > 10.0F) {
@@ -274,9 +274,9 @@ public class DefaultImageRenderer implements RegionRenderer {
 						f3 = -10.0F;
 					}
 
-					f3 = (float) (f3 + (imageColorArray[k] - 64) / 7.0D);
+					f3 = (float) (f3 + (heights[k] - 64) / 7.0D);
 
-					imageShadeArray[k] = Color.shade(imageShadeArray[k], (int) (f3 * 8.0F));
+					colors[k] = Color.shade(colors[k], (int) (f3 * 8.0F));
 				}
 				n++;
 			}
