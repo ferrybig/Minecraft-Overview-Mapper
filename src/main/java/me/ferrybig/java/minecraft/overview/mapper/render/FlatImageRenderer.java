@@ -8,6 +8,7 @@ package me.ferrybig.java.minecraft.overview.mapper.render;
 import com.flowpowered.nbt.ByteTag;
 import com.flowpowered.nbt.CompoundMap;
 import com.flowpowered.nbt.CompoundTag;
+import com.flowpowered.nbt.IntArrayTag;
 import com.flowpowered.nbt.IntTag;
 import com.flowpowered.nbt.ListTag;
 import com.flowpowered.nbt.LongArrayTag;
@@ -26,9 +27,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
 import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache;
 import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache.TextureMapper;
+import me.ferrybig.java.minecraft.overview.mapper.textures.TextureKey;
 
 /**
  * This is the default image renderer used by the code, this render as a nice
@@ -62,6 +66,7 @@ public class FlatImageRenderer implements RegionRenderer {
 	 * Amount of blocks in a chunk section
 	 */
 	private static final int BLOCKS_IN_CHUNK_SECTION = CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE;
+	private static final int BLOCKS_IN_CHUNK_SURFACE = CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE;
 	private static final int TOTAL_IMAGE_SIZE = IMAGE_SIZE * IMAGE_SIZE;
 	private static final int BLOCKS_IN_REGION = 512;
 	private static final int BLOCKS_IN_REGION_MINUS_ONE = BLOCKS_IN_REGION - 1;
@@ -73,6 +78,16 @@ public class FlatImageRenderer implements RegionRenderer {
 
 	private static int clampToByte(int val) {
 		return val > 255 ? 255 : val < 0 ? 0 : val;
+	}
+
+	private static void readBiomeList(int[] biomes, Tag<?> biomeTag) {
+		IntArrayTag intTag = (IntArrayTag) biomeTag;
+		int[] biomeList = intTag.getValue();
+		if (biomeList.length == 0) {
+			Arrays.fill(biomes, 0);
+		} else {
+			System.arraycopy(biomeList, 0, biomes, 0, biomeList.length);
+		}
 	}
 
 	private static void shade(int[] pixelArray, int shade) {
@@ -140,7 +155,8 @@ public class FlatImageRenderer implements RegionRenderer {
 			this.emptyChunkSection = new ChunkSection(
 				1,
 				new long[BLOCKS_IN_CHUNK_SECTION / LONG_SIZE],
-				new TextureMapper[]{textures.get("air", Collections.emptyMap())},
+				new TextureMapper[]{textures.get("air", Collections.emptyMap(), 0)},
+				null,
 				true
 			);
 		} catch (ExecutionException ex) {
@@ -160,6 +176,7 @@ public class FlatImageRenderer implements RegionRenderer {
 		ChunkSection[] chunkSectionCache = new ChunkSection[MAX_CHUNK_SECTIONS];
 		byte[] heights = new byte[TOTAL_BLOCKS_IN_REGION];
 		Arrays.fill(heights, Byte.MIN_VALUE);
+		int[] biomeCache = new int[BLOCKS_IN_CHUNK_SURFACE];
 
 		// chunkStream comes from ChunkReader, closing is optional
 		InputStream chunkStream;
@@ -176,7 +193,7 @@ public class FlatImageRenderer implements RegionRenderer {
 				if (DEBUG) {
 					System.out.println("Render chunk: " + regionX + "," + regionZ);
 				}
-				renderChunk(levelTag, regionX, regionZ, regionDetailImage, heights, dstPixelsCache, chunkSectionCache);
+				renderChunk(levelTag, regionX, regionZ, regionDetailImage, heights, dstPixelsCache, biomeCache, chunkSectionCache);
 			} catch (ExecutionException ex) {
 				throw new IOException(ex);
 			}
@@ -200,23 +217,26 @@ public class FlatImageRenderer implements RegionRenderer {
 		BufferedImage image,
 		byte[] heights,
 		int[] dstPixelsCache,
+		int[] biomes,
 		ChunkSection[] chunkSections
 	) throws ExecutionException {
 		ListTag<?> sections = (ListTag<?>) levelTag.getValue().get("Sections");
 		if (sections == null) {
 			return; // This is an empty chunk
 		}
-		int maxY = this.createChunkPallete(sections, chunkSections);
-		FlatImageRenderer.renderChunkBlocks(localX, localZ, maxY, image, chunkSections, heights, dstPixelsCache);
+		FlatImageRenderer.readBiomeList(biomes, levelTag.getValue().get("Biomes"));
+		int maxY = this.createChunkPallete(sections, chunkSections, biomes);
+		FlatImageRenderer.renderChunkBlocks(localX, localZ, maxY, image, chunkSections, heights, biomes, dstPixelsCache);
 	}
 
-	private int createChunkPallete(ListTag<?> sections, ChunkSection[] chunkSections) throws ExecutionException {
+	private int createChunkPallete(ListTag<?> sections, ChunkSection[] chunkSections, int[] biomes) throws ExecutionException {
 		Arrays.fill(chunkSections, this.emptyChunkSection);
 		int maxY = 0;
 		for (Object section : sections.getValue()) {
 			CompoundMap root = ((CompoundTag) section).getValue();
 			List<?> pallete = ((ListTag<?>) root.get("Palette")).getValue();
 			TextureMapper[] parsedPallete = new TextureMapper[pallete.size()];
+			TextureMapper[][] biomePallete = null;
 			long[] blockStates = ((LongArrayTag) root.get("BlockStates")).getValue();
 
 			for (int i = 0; i < pallete.size(); i++) {
@@ -234,7 +254,33 @@ public class FlatImageRenderer implements RegionRenderer {
 				} else {
 					properties = Collections.emptyMap();
 				}
-				parsedPallete[i] = this.textures.get(blockId, properties);
+				int firstBiomeId = biomes[0];
+				TextureKey key = TextureKey.of(blockId, properties, firstBiomeId);
+				boolean requiresBiomePallete = false;
+				if (key.hasBiomeId()) {
+					for (int j = 0; j < biomes.length; j++) {
+						if (biomes[j] != firstBiomeId) {
+							requiresBiomePallete = true;
+							break;
+						}
+					}
+				}
+				if (requiresBiomePallete) {
+					if (biomePallete == null) {
+						biomePallete = new TextureMapper[256][];
+					}
+					for (int z = 0; z < CHUNK_SECTION_SIZE; z++) {
+						for (int x = 0; x < CHUNK_SECTION_SIZE; x++) {
+							int biome = biomes[z * 16 + x];
+							if (biomePallete[biome] == null) {
+								biomePallete[biome] = new TextureMapper[pallete.size()];
+							}
+							biomePallete[biome][i] = this.textures.get(blockId, properties, biome);
+						}
+					}
+				} else {
+					parsedPallete[i] = this.textures.get(key);
+				}
 			}
 			int y = ((ByteTag) root.get("Y")).getValue();
 			maxY = Math.max(maxY, y * CHUNK_SECTION_SIZE + 15);
@@ -242,18 +288,20 @@ public class FlatImageRenderer implements RegionRenderer {
 				blockStates.length * LONG_SIZE / (BLOCKS_IN_CHUNK_SECTION),
 				blockStates,
 				parsedPallete,
+				biomePallete,
 				false
 			);
 		}
 		return maxY;
 	}
 
-	private static void renderChunkBlocks(int localX, int localZ, int maxY, BufferedImage image, ChunkSection[] chunkSections, byte[] heights, int[] dstPixels) {
+	private static void renderChunkBlocks(int localX, int localZ, int maxY, BufferedImage image, ChunkSection[] chunkSections, byte[] heights, int[] biomes, int[] dstPixels) {
 		//System.out.println("CHunk at " + localX + "," + localZ + " has max height " + maxY);
 		for (int x = 0; x < CHUNK_SECTION_SIZE; x++) {
 			int partialHeightMapIndex = (localX * CHUNK_SECTION_SIZE + x) * BLOCKS_IN_REGION;
 			for (int z = 0; z < CHUNK_SECTION_SIZE; z++) {
 				int fullHeightMapIndex = partialHeightMapIndex + localZ * CHUNK_SECTION_SIZE + z;
+				int biome = biomes[z * 16 + x];
 				boolean hasCutOffHeightMap = false;
 				int y = maxY;
 				for (; y > 0; y--) {
@@ -264,7 +312,7 @@ public class FlatImageRenderer implements RegionRenderer {
 						y -= 15;
 						continue;
 					}
-					TextureMapper block = s.getBlock(x, blockY, z);
+					TextureMapper block = s.getBlock(x, blockY, z, biome);
 					//System.out.println("Block at " + x + ',' + y + ',' + z + " is " + block.getBlock() + " and is " + block.isOpaque());
 					if (block.isOpaque()) {
 						break;
@@ -287,7 +335,7 @@ public class FlatImageRenderer implements RegionRenderer {
 					if (s.isEmpty()) {
 						continue;
 					}
-					TextureMapper block = s.getBlock(x, blockY, z);
+					TextureMapper block = s.getBlock(x, blockY, z, biome);
 					block.apply(dstPixels);
 				}
 				image.getRaster().setDataElements((x + localX * CHUNK_SECTION_SIZE) * IMAGE_SIZE,
@@ -304,11 +352,15 @@ public class FlatImageRenderer implements RegionRenderer {
 
 		private final int blockPartSize;
 		private final long blockMask;
+		@Nonnull
 		private final long[] blockStates;
+		@Nullable
+		private final TextureMapper[][] biomeStates;
 		private final boolean empty;
+		@Nonnull
 		private final TextureMapper[] states;
 
-		public ChunkSection(int blockPartSize, long[] blockStates, TextureMapper[] states, boolean empty) {
+		public ChunkSection(int blockPartSize, long[] blockStates, TextureMapper[] states, TextureMapper[][] biomeStates, boolean empty) {
 			if (blockStates.length * LONG_SIZE != blockPartSize * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE * CHUNK_SECTION_SIZE) {
 				throw new IllegalArgumentException("blockStates length does not match expected: "
 					+ blockStates.length * LONG_SIZE
@@ -320,10 +372,11 @@ public class FlatImageRenderer implements RegionRenderer {
 			this.blockMask = (1l << blockPartSize) - 1;
 			this.blockStates = blockStates;
 			this.states = states;
+			this.biomeStates = biomeStates;
 			this.empty = empty;
 		}
 
-		public TextureMapper getBlock(int x, int y, int z) {
+		public TextureMapper getBlock(int x, int y, int z, int biome) {
 			Preconditions.checkElementIndex(x, CHUNK_SECTION_SIZE, "x");
 			Preconditions.checkElementIndex(y, CHUNK_SECTION_SIZE, "y");
 			Preconditions.checkElementIndex(z, CHUNK_SECTION_SIZE, "z");
@@ -348,6 +401,9 @@ public class FlatImageRenderer implements RegionRenderer {
 				throw new IllegalArgumentException("Calculated block id is smaller than the pallete allows: " + maskedValue);
 			}
 			TextureMapper texture = this.states[(int) maskedValue];
+			if (texture == null && this.biomeStates != null) {
+				texture = biomeStates[biome][(int) maskedValue];
+			}
 			if (texture == null) {
 				throw new IllegalArgumentException("Block " + maskedValue + " is null in the pallete");
 			}

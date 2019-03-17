@@ -83,7 +83,7 @@ public class Main {
 		System.out.println("Loading textures...");
 		TextureParser parser = new TextureParser();
 		parser.readAll(Arrays.asList(new File("C:\\Users\\Fernando\\AppData\\Roaming\\.minecraft\\versions\\1.13.2\\1.13.2.jar")));
-		final TextureCache textureCache = new TextureCache(parser);
+		final TextureCache textureCache = new TextureCache(parser, BiomeMap.loadDefault());
 
 		System.out.println("Initizing input system");
 		Path in = Paths.get(cmd.getOptionValue(input.getOpt()));

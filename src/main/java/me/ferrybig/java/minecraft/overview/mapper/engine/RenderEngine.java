@@ -26,11 +26,11 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import me.ferrybig.java.minecraft.overview.mapper.input.InputInfo;
-import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
-import me.ferrybig.java.minecraft.overview.mapper.render.RegionRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.input.InputSource;
+import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
 import me.ferrybig.java.minecraft.overview.mapper.input.WorldFile;
 import me.ferrybig.java.minecraft.overview.mapper.render.ImageWriter;
+import me.ferrybig.java.minecraft.overview.mapper.render.RegionRenderer;
 import me.ferrybig.java.minecraft.overview.mapper.render.RenderOutput;
 
 public class RenderEngine implements Closeable {

@@ -28,6 +28,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
 import me.ferrybig.java.minecraft.overview.mapper.textures.blockstate.MultiBlockState;
 import me.ferrybig.java.minecraft.overview.mapper.textures.blockstate.UnresolvedBlockState;
@@ -52,38 +54,31 @@ public class TextureParser {
 	private static final String BLOCKS_SUFFIX = ".json";
 	private static final String TEXTURES_PREFIX = BASE_PREFIX + "textures/";
 	private static final String TEXTURES_SUFFIX = ".png";
-	private static final BufferedImage IMAGE_NOT_FOUND;
-	private static final BufferedImage IMAGE_ERROR;
+	private static final BufferedImage IMAGE_NOT_FOUND = createErrorImage(Color.red);
+	private static final BufferedImage IMAGE_ERROR = createErrorImage(Color.yellow);
 	private static final boolean DEBUG = false;
 
-	static {
-		IMAGE_NOT_FOUND = new BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB);
-		Graphics2D g2 = IMAGE_NOT_FOUND.createGraphics();
+	private static BufferedImage createErrorImage(Color color) {
+		BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2 = img.createGraphics();
 		try {
-			g2.setColor(Color.red);
+			g2.setColor(Color.BLACK);
+			g2.fillRect(0, 0, 16, 16);
+			g2.setColor(color);
 			g2.fillRect(0, 0, 8, 8);
 			g2.fillRect(8, 8, 8, 8);
 		} finally {
 			g2.dispose();
 		}
+		return img;
 	}
 
-	static {
-		IMAGE_ERROR = new BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB);
-		Graphics2D g2 = IMAGE_ERROR.createGraphics();
-		try {
-			g2.setColor(Color.yellow);
-			g2.fillRect(0, 0, 8, 8);
-			g2.fillRect(8, 8, 8, 8);
-		} finally {
-			g2.dispose();
-		}
-	}
-
+	@Nonnull
 	private static Reader readTextFromZipList(FileLoader loader, String filename) throws IOException {
 		return new BufferedReader(new InputStreamReader(loader.loadPath(filename), StandardCharsets.UTF_8));
 	}
 
+	@Nullable
 	private static Face readFace(JsonElement face, Vector2d defaultPoint1, Vector2d defaultPoint2) {
 		if (face == null) {
 			return null;
@@ -124,6 +119,7 @@ public class TextureParser {
 		return new Face(point1, point2, texture, cullFace, rotation, tintIndex, usesTintIndex);
 	}
 
+	@Nonnull
 	private static Model readModel(FileLoader files, Map<String, Model> modelCache, JsonParser parser, String modelName) throws IOException {
 		if (modelCache.containsKey(modelName)) {
 			Model model = modelCache.get(modelName);
@@ -238,6 +234,7 @@ public class TextureParser {
 		return modelObj;
 	}
 
+	@Nonnull
 	private static Map.Entry<VariantSpecifier, VariantModel> readModelParts(
 		Map<String, Model> modelCache, FileLoader loader,
 		VariantSpecifier specifier, JsonElement modelData,
@@ -250,6 +247,7 @@ public class TextureParser {
 		return readModelPart(modelCache, loader, specifier, modelData.getAsJsonObject(), parser);
 	}
 
+	@Nonnull
 	private static Map.Entry<VariantSpecifier, VariantModel> readModelPart(
 		Map<String, Model> modelCache, FileLoader loader,
 		VariantSpecifier specifier, JsonObject modelData,
@@ -263,6 +261,7 @@ public class TextureParser {
 		return new AbstractMap.SimpleImmutableEntry<>(specifier, model);
 	}
 
+	@Nonnull
 	private static VariantSpecifier readObjectToVariantSpecifier(JsonObject obj) {
 		Set<Map.Entry<String, JsonElement>> entrySet = obj.entrySet();
 		List<VariantSpecifier> specifiers = new ArrayList<>(entrySet.size());
@@ -431,10 +430,17 @@ public class TextureParser {
 		}
 	}
 
+	@Nonnull
 	public UnresolvedBlockState getMaterial(String material) {
 		return variants.get(material);
 	}
 
+	@Nonnull
+	public Variant getMaterial(TextureKey key) {
+		return getMaterial(key.getBlock(), key.getState());
+	}
+
+	@Nonnull
 	public Variant getMaterial(String material, Map<String, String> map) {
 		if (material.startsWith("minecraft:")) {
 			material = material.substring("minecraft:".length());
@@ -446,6 +452,7 @@ public class TextureParser {
 		return unresolvedMaterial.resolve(map);
 	}
 
+	@Nonnull
 	public BufferedImage getTexture(Model model, String textureName) {
 		String textureKey = textureName;
 		int loopCount = 0;

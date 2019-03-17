@@ -7,5 +7,5 @@ This Minecraft Mapper creates a top overview from your minecraft world, it has t
 
 Simple render:
 
-    java -jar "target\Minecraft-Overview-Mapper-1.0.0-jar-with-dependencies.jar" -i F:/MinecraftRender/world -o F:/MinecraftRender/"
+    java -jar "target\Minecraft-Overview-Mapper-1.0.0-jar-with-dependencies.jar" -i F:/MinecraftRender/world -o F:/MinecraftRender/
 
