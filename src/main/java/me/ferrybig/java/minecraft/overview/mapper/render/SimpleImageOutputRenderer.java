@@ -5,7 +5,7 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
-import com.flowpowered.nbt.CompoundTag;
+import me.ferrybig.java.minecraft.nbt.CompoundTag;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;

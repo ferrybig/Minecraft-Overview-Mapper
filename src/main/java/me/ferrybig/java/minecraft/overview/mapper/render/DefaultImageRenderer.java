@@ -5,14 +5,6 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
-import com.flowpowered.nbt.ByteArrayTag;
-import com.flowpowered.nbt.ByteTag;
-import com.flowpowered.nbt.CompoundTag;
-import com.flowpowered.nbt.IntTag;
-import com.flowpowered.nbt.ListTag;
-import com.flowpowered.nbt.LongTag;
-import com.flowpowered.nbt.Tag;
-import com.flowpowered.nbt.stream.NBTInputStream;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -20,10 +12,16 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
+import me.ferrybig.java.minecraft.nbt.ByteArrayTag;
+import me.ferrybig.java.minecraft.nbt.CompoundTag;
+import me.ferrybig.java.minecraft.nbt.Resolveable;
+import me.ferrybig.java.minecraft.nbt.Tag;
+import me.ferrybig.java.minecraft.nbt.exception.NBTException;
 import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
 import me.ferrybig.java.minecraft.overview.mapper.render.BiomeMap.Biome;
 import me.ferrybig.java.minecraft.overview.mapper.render.BlockMap.Block;
@@ -55,17 +53,9 @@ public class DefaultImageRenderer implements RegionRenderer {
 	}
 
 	@Override
-	public RenderOutput renderFile(PreparedFile file, int lastModified) throws IOException {
+	public RenderOutput renderFile(PreparedFile file, int lastModified) throws IOException, NBTException {
 		ByteCountingDataInputStream in = new ByteCountingDataInputStream(new BufferedInputStream(file.getInputstream(), SECTOR_BYTES * 2));
-		PriorityQueue<Integer> chunkIndexes = new PriorityQueue<>(
-			new Comparator<Integer>() {
-
-			@Override
-			public int compare(Integer o1, Integer o2) {
-				return Integer.compare(o1, o2);
-			}
-		}
-		);
+		PriorityQueue<Integer> chunkIndexes = new PriorityQueue<>(Integer::compare);
 		for (int k = 0; k < SECTOR_INTS; ++k) {
 			int offset = in.readInt();
 			if (offset != 0) {
@@ -87,7 +77,6 @@ public class DefaultImageRenderer implements RegionRenderer {
 		int regionX;
 		int globalX;
 		int globalZ;
-		long lastUpdate;
 		Integer lowestChunkIndex;
 		CompoundTag globalTag;
 		CompoundTag levelTag;
@@ -118,20 +107,18 @@ public class DefaultImageRenderer implements RegionRenderer {
 				default:
 					throw new IOException("Invalid format: " + version);
 			}
-			globalTag = (CompoundTag) new NBTInputStream(
-				new DataInputStream(chunkStream), false).readTag();
-			levelTag = (CompoundTag) globalTag.getValue().get("Level");
-			globalX = ((IntTag) levelTag.getValue().get("xPos")).getValue();
-			globalZ = ((IntTag) levelTag.getValue().get("zPos")).getValue();
-			lastUpdate = ((LongTag) levelTag.getValue().get("LastUpdate")).getValue();
+			globalTag = Tag.fromNbt(new DataInputStream(chunkStream)).asCompoundTag();
+			levelTag = globalTag.resolve("Level").asCompoundTag();
+			globalX = levelTag.resolve("xPos").asIntTag().getValue();
+			globalZ = levelTag.resolve("zPos").asIntTag().getValue();
 			regionX = calculateChunkPos(globalX);
 			regionZ = calculateChunkPos(globalZ);
 
-			loadChunkData(levelTag,
-				blockId, blockData, sectionsUsedList, biomes);
+			loadChunkData(levelTag, blockId, blockData, sectionsUsedList, biomes);
 			preRenderChunk(
-				blockId, blockData, sectionsUsedList, biomes, blockMap,
-				biomeMap, regionX, regionZ, imageColorArray, imageShadeArray);
+				blockId, blockData, sectionsUsedList, biomes, this.blockMap,
+				this.biomeMap, regionX, regionZ, imageColorArray, imageShadeArray
+			);
 		}
 		demultiplyAlpha(imageColorArray);
 		shade(imageShadeArray, imageColorArray);
@@ -149,23 +136,21 @@ public class DefaultImageRenderer implements RegionRenderer {
 		for (int i = 0; i < MAX_CHUNK_SECTIONS; i++) {
 			sectionsUsed[i] = false;
 		}
-		Tag<?> biomesTag = levelTag.getValue().get("Biomes");
+		ByteArrayTag biomesTag = (ByteArrayTag)levelTag.resolveOrNull("Biomes");
 		if (biomesTag != null) {
-			System.arraycopy(((ByteArrayTag) biomesTag).getValue(), 0, biomeIds, 0, 16 * 16);
+			System.arraycopy(biomesTag.get(), 0, biomeIds, 0, 16 * 16);
 		} else {
-			for (int i = 0; i < 16 * 16; i++) {
-				biomeIds[i] = -1;
-			}
+			Arrays.fill(biomeIds, (byte)-1);
 		}
 
-		for (CompoundTag sectionInfo : ((ListTag<CompoundTag>) levelTag.getValue().get("Sections")).getValue()) {
-			int sectionIndex = ((ByteTag) sectionInfo.getValue().get("Y")).getValue().intValue();
-			byte[] blockIdsLow = ((ByteArrayTag) sectionInfo.getValue().get("Blocks")).getValue();
-			byte[] blockData = ((ByteArrayTag) sectionInfo.getValue().get("Data")).getValue();
-			Tag<?> addTag = sectionInfo.getValue().get("Add");
+		for (Tag sectionInfo : levelTag.resolve("Sections").asListTag()) {
+			int sectionIndex = sectionInfo.resolve("Y").asIntTag().getValue();
+			byte[] blockIdsLow = sectionInfo.resolve("Blocks").asByteArrayTag().get();
+			byte[] blockData = sectionInfo.resolve("Data").asByteArrayTag().get();
+			Resolveable addTag = sectionInfo.resolveOrNull("Add");
 			byte[] blockAdd = null;
 			if (addTag != null) {
-				blockAdd = ((ByteArrayTag) addTag).getValue();
+				blockAdd = addTag.asByteArrayTag().get();
 			}
 			@SuppressWarnings("MismatchedReadAndWriteOfArray")
 			short[] destSectionBlockIds = sectionBlockIds[sectionIndex];

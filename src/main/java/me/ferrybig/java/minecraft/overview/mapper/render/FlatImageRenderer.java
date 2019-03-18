@@ -5,16 +5,6 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
-import com.flowpowered.nbt.ByteTag;
-import com.flowpowered.nbt.CompoundMap;
-import com.flowpowered.nbt.CompoundTag;
-import com.flowpowered.nbt.IntArrayTag;
-import com.flowpowered.nbt.IntTag;
-import com.flowpowered.nbt.ListTag;
-import com.flowpowered.nbt.LongArrayTag;
-import com.flowpowered.nbt.StringTag;
-import com.flowpowered.nbt.Tag;
-import com.flowpowered.nbt.stream.NBTInputStream;
 import com.google.common.base.Preconditions;
 import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
@@ -29,6 +19,16 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import me.ferrybig.java.minecraft.nbt.ByteTag;
+import me.ferrybig.java.minecraft.nbt.CompoundTag;
+import me.ferrybig.java.minecraft.nbt.IntArrayTag;
+import me.ferrybig.java.minecraft.nbt.IntTag;
+import me.ferrybig.java.minecraft.nbt.ListTag;
+import me.ferrybig.java.minecraft.nbt.LongArrayTag;
+import me.ferrybig.java.minecraft.nbt.Resolveable;
+import me.ferrybig.java.minecraft.nbt.StringTag;
+import me.ferrybig.java.minecraft.nbt.Tag;
+import me.ferrybig.java.minecraft.nbt.exception.NBTException;
 import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
 import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache;
 import me.ferrybig.java.minecraft.overview.mapper.textures.TextureCache.TextureMapper;
@@ -80,9 +80,8 @@ public class FlatImageRenderer implements RegionRenderer {
 		return val > 255 ? 255 : val < 0 ? 0 : val;
 	}
 
-	private static void readBiomeList(int[] biomes, Tag<?> biomeTag) {
-		IntArrayTag intTag = (IntArrayTag) biomeTag;
-		int[] biomeList = intTag.getValue();
+	private static void readBiomeList(int[] biomes, Tag biomeTag) {
+		int[] biomeList = biomeTag.asIntArrayTag().get();
 		if (biomeList.length == 0) {
 			Arrays.fill(biomes, 0);
 		} else {
@@ -165,7 +164,7 @@ public class FlatImageRenderer implements RegionRenderer {
 	}
 
 	@Override
-	public RenderOutput renderFile(PreparedFile file, int lastModified) throws IOException {
+	public RenderOutput renderFile(PreparedFile file, int lastModified) throws IOException, NBTException {
 		ChunkReader reader = file.getChunkReader();
 		if (lastModified != Integer.MIN_VALUE && lastModified >= reader.getLastModificationDate()) {
 			return new RenderOutput(null, lastModified);
@@ -181,11 +180,10 @@ public class FlatImageRenderer implements RegionRenderer {
 		// chunkStream comes from ChunkReader, closing is optional
 		InputStream chunkStream;
 		while ((chunkStream = reader.nextChunk()) != null) {
-			CompoundTag globalTag = (CompoundTag) new NBTInputStream(
-				new DataInputStream(chunkStream), false).readTag();
-			CompoundTag levelTag = (CompoundTag) globalTag.getValue().get("Level");
-			int globalX = ((IntTag) levelTag.getValue().get("xPos")).getValue();
-			int globalZ = ((IntTag) levelTag.getValue().get("zPos")).getValue();
+			CompoundTag globalTag = Tag.fromNbt(new DataInputStream(chunkStream)).asCompoundTag();
+			CompoundTag levelTag = globalTag.resolve("Level").asCompoundTag();
+			int globalX = levelTag.resolve("xPos").asIntTag().getValue();
+			int globalZ = levelTag.resolve("zPos").asIntTag().getValue();
 			int regionX = calculateChunkPos(globalX);
 			int regionZ = calculateChunkPos(globalZ);
 
@@ -220,36 +218,35 @@ public class FlatImageRenderer implements RegionRenderer {
 		int[] biomes,
 		ChunkSection[] chunkSections
 	) throws ExecutionException {
-		ListTag<?> sections = (ListTag<?>) levelTag.getValue().get("Sections");
+		ListTag sections = (ListTag)levelTag.resolveOrNull("Sections");
 		if (sections == null) {
 			return; // This is an empty chunk
 		}
-		FlatImageRenderer.readBiomeList(biomes, levelTag.getValue().get("Biomes"));
+		FlatImageRenderer.readBiomeList(biomes, levelTag.resolve("Biomes").asIntArrayTag());
 		int maxY = this.createChunkPallete(sections, chunkSections, biomes);
 		FlatImageRenderer.renderChunkBlocks(localX, localZ, maxY, image, chunkSections, heights, biomes, dstPixelsCache);
 	}
 
-	private int createChunkPallete(ListTag<?> sections, ChunkSection[] chunkSections, int[] biomes) throws ExecutionException {
+	private int createChunkPallete(ListTag sections, ChunkSection[] chunkSections, int[] biomes) throws ExecutionException {
 		Arrays.fill(chunkSections, this.emptyChunkSection);
 		int maxY = 0;
-		for (Object section : sections.getValue()) {
-			CompoundMap root = ((CompoundTag) section).getValue();
-			List<?> pallete = ((ListTag<?>) root.get("Palette")).getValue();
+		for (Tag root : sections) {
+			ListTag pallete = root.resolve("Palette").asListTag();
 			TextureMapper[] parsedPallete = new TextureMapper[pallete.size()];
 			TextureMapper[][] biomePallete = null;
-			long[] blockStates = ((LongArrayTag) root.get("BlockStates")).getValue();
+			long[] blockStates = root.resolve("BlockStates").asLongArrayTag().get();
 
 			for (int i = 0; i < pallete.size(); i++) {
-				CompoundMap palleteRoot = ((CompoundTag) pallete.get(i)).getValue();
-				String blockId = ((StringTag) palleteRoot.get("Name")).getValue();
+				Tag palleteRoot = pallete.get(i);
+				String blockId = palleteRoot.resolve("Name").asStringTag().get();
 				Map<String, String> properties;
-				if (palleteRoot.containsKey("Properties")) {
+				CompoundTag propertiesNode = (CompoundTag)palleteRoot.resolveOrNull("Properties");
+				if (propertiesNode != null) {
 					properties = new LinkedHashMap<>();
-					CompoundMap map = ((CompoundTag) palleteRoot.get("Properties")).getValue();
-					Iterator<Map.Entry<String, Tag<?>>> iterator = map.entrySet().iterator();
+					Iterator<? extends Map.Entry<String, ? extends Tag>> iterator = propertiesNode.get().entrySet().iterator();
 					while (iterator.hasNext()) {
-						Map.Entry<String, Tag<?>> next = iterator.next();
-						properties.put(next.getKey(), ((StringTag) next.getValue()).getValue());
+						Map.Entry<String, ? extends Tag> next = iterator.next();
+						properties.put(next.getKey(), next.getValue().asStringTag().get());
 					}
 				} else {
 					properties = Collections.emptyMap();
@@ -282,7 +279,7 @@ public class FlatImageRenderer implements RegionRenderer {
 					parsedPallete[i] = this.textures.get(key);
 				}
 			}
-			int y = ((ByteTag) root.get("Y")).getValue();
+			int y = root.resolve("Y").asByteTag().get();
 			maxY = Math.max(maxY, y * CHUNK_SECTION_SIZE + 15);
 			chunkSections[y] = new ChunkSection(
 				blockStates.length * LONG_SIZE / (BLOCKS_IN_CHUNK_SECTION),

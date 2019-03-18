@@ -5,7 +5,7 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
-import com.flowpowered.nbt.CompoundTag;
+import me.ferrybig.java.minecraft.nbt.CompoundTag;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -45,7 +45,7 @@ public class SimpleHTMLOutputRenderer extends SimpleRenderer {
 			writer.append("</style>");
 			writingStyleSheets = false;
 		}
-		writer.append("<title>" + ((CompoundTag) level.getValue().get("Data")).getValue().get("LevelName") + "</title>");
+		writer.append("<title>" + level.resolve("Data", "LevelName").asStringTag().get() + "</title>");
 	}
 
 	@Override

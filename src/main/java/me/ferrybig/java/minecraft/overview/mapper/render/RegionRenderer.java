@@ -6,10 +6,11 @@
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
 import java.io.IOException;
+import me.ferrybig.java.minecraft.nbt.exception.NBTException;
 import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
 
 public interface RegionRenderer {
 
 	public RenderOutput renderFile(PreparedFile file, int lastModified)
-		throws IOException;
+		throws IOException, NBTException;
 }

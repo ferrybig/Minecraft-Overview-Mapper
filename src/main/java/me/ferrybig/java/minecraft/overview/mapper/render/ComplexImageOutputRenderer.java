@@ -5,7 +5,7 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
-import com.flowpowered.nbt.CompoundTag;
+import me.ferrybig.java.minecraft.nbt.CompoundTag;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;

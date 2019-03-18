@@ -5,11 +5,11 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
-import com.flowpowered.nbt.CompoundTag;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import me.ferrybig.java.minecraft.nbt.CompoundTag;
 import me.ferrybig.java.minecraft.overview.mapper.input.WorldFile;
 
 public abstract class SimpleRenderer extends UncachedImageWriter {
