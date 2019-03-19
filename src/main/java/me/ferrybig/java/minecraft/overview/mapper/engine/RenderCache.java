@@ -47,6 +47,7 @@ public class RenderCache implements Closeable {
 			}
 			// Recreate normal file
 			try (BufferedWriter writer = Files.newBufferedWriter(normalFile, StandardCharsets.UTF_8)) {
+				writer.write("#v1.0\n");
 				for (CacheEntry entry : entries.values()) {
 					writer.write(entry.toLine());
 				}
