@@ -48,6 +48,11 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 	private final int normalRes = 512;
 	private final int halfRes = normalRes / 2;
 	private final int maxZoom;
+	@Nonnull
+	private final String imageFormat = "png";
+	@Nonnull
+	private final String imageExtension = "png";
+
 	@Nullable
 	private final LayerConnector zoomLayer;
 
@@ -80,7 +85,7 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 		Path p = images
 			.resolve("DIM" + Integer.toString(dimension))
 			.resolve(Integer.toString(zoom))
-			.resolve(Integer.toString(x) + "_" + Integer.toString(z) + ".gif");
+			.resolve(Integer.toString(x) + "_" + Integer.toString(z) + "." + imageExtension);
 		Files.createDirectories(p.getParent());
 		return p;
 	}
@@ -159,7 +164,7 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 							System.err.println("Rendering zoom level " + currentZoom + ", tile: " + tileX + ", " + tileZ + " (" + x + "," + z + ") ");
 							System.err.println(imageLocation);
 						}
-						ImageIO.write(renderResult, "gif", imageLocation.toFile());
+						ImageIO.write(renderResult, imageFormat, imageLocation.toFile());
 					}
 				}
 				if (currentZoom >= this.maxZoom) {
