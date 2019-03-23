@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import me.ferrybig.java.minecraft.nbt.exception.NBTException;
 
 public abstract class SimpleInputInfo implements InputInfo {
 
@@ -44,7 +45,7 @@ public abstract class SimpleInputInfo implements InputInfo {
 	}
 
 	@Override
-	public void forAllFiles(@Nonnull FileConsumer consumer) throws IOException {
+	public void forAllFiles(@Nonnull FileConsumer consumer) throws IOException, NBTException {
 		Iterator<WorldFile> iterator = this.getSortedList(consumer).iterator();
 		while (iterator.hasNext()) {
 			consumer.consume(this.toPreparedFile(iterator.next()));
@@ -57,7 +58,7 @@ public abstract class SimpleInputInfo implements InputInfo {
 	}
 
 	@Override
-	public void forAllFilesParalel(FileConsumer consumer, int maxTasks) throws IOException, InterruptedException {
+	public void forAllFilesParalel(FileConsumer consumer, int maxTasks) throws IOException, InterruptedException, NBTException {
 		if (!this.supportsParallelExecution()) {
 			InputInfo.super.forAllFilesParalel(consumer, maxTasks);
 			return;
@@ -81,7 +82,7 @@ public abstract class SimpleInputInfo implements InputInfo {
 	}
 
 	@Override
-	public void forAllFilesParalel(FileConsumer consumer, int maxTasks, ExecutorService executor) throws IOException, InterruptedException {
+	public void forAllFilesParalel(FileConsumer consumer, int maxTasks, ExecutorService executor) throws IOException, InterruptedException, NBTException {
 		if (!this.supportsParallelExecution()) {
 			InputInfo.super.forAllFilesParalel(consumer, maxTasks, executor);
 			return;
@@ -91,7 +92,7 @@ public abstract class SimpleInputInfo implements InputInfo {
 		CountDownLatch latch = new CountDownLatch(maxTasks);
 		AtomicInteger fileIndex = new AtomicInteger();
 		Runnable task = new Runnable() {
-			private void runItem(WorldFile file) throws IOException {
+			private void runItem(WorldFile file) throws IOException, NBTException {
 				consumer.consume(toPreparedFile(file));
 			}
 
@@ -126,7 +127,7 @@ public abstract class SimpleInputInfo implements InputInfo {
 	}
 
 	@Override
-	public void forSingleFile(@Nonnull WorldFile file, @Nonnull FileConsumer consumer) throws IOException {
+	public void forSingleFile(@Nonnull WorldFile file, @Nonnull FileConsumer consumer) throws IOException, NBTException {
 		consumer.consume(this.toPreparedFile(file));
 	}
 

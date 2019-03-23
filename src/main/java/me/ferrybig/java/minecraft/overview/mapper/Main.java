@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import me.ferrybig.java.minecraft.nbt.exception.NBTException;
 import me.ferrybig.java.minecraft.overview.mapper.engine.AbstractProgressReporter;
 import me.ferrybig.java.minecraft.overview.mapper.engine.RenderEngine;
 import me.ferrybig.java.minecraft.overview.mapper.engine.RenderOptions;
@@ -35,7 +36,7 @@ import org.apache.commons.cli.ParseException;
 
 public class Main {
 
-	public static void main(String[] args) throws IOException, ParseException {
+	public static void main(String[] args) throws IOException, ParseException, NBTException {
 		// create Options object
 		Options options = new Options();
 

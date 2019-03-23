@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import me.ferrybig.java.minecraft.nbt.exception.NBTException;
 
 public interface InputInfo extends Closeable {
 
@@ -20,19 +21,19 @@ public interface InputInfo extends Closeable {
 
 	public boolean supportsSingleFile();
 
-	public void forSingleFile(@Nonnull WorldFile file, @Nonnull FileConsumer consumer) throws IOException;
+	public void forSingleFile(@Nonnull WorldFile file, @Nonnull FileConsumer consumer) throws IOException, NBTException;
 
-	public void forAllFiles(@Nonnull FileConsumer consumer) throws IOException;
+	public void forAllFiles(@Nonnull FileConsumer consumer) throws IOException, NBTException;
 
 	public default boolean supportsParallelExecution() {
 		return false;
 	}
 
-	public default void forAllFilesParalel(@Nonnull FileConsumer consumer, int maxTasks) throws IOException, InterruptedException {
+	public default void forAllFilesParalel(@Nonnull FileConsumer consumer, int maxTasks) throws IOException, NBTException, InterruptedException {
 		this.forAllFiles(consumer);
 	}
 
-	public default void forAllFilesParalel(@Nonnull FileConsumer consumer, int maxTasks, @Nonnull ExecutorService executor) throws IOException, InterruptedException {
+	public default void forAllFilesParalel(@Nonnull FileConsumer consumer, int maxTasks, @Nonnull ExecutorService executor) throws IOException, NBTException, InterruptedException {
 		this.forAllFiles(consumer);
 	}
 
@@ -51,6 +52,6 @@ public interface InputInfo extends Closeable {
 			return true;
 		}
 
-		public void consume(@Nonnull PreparedFile file) throws IOException;
+		public void consume(@Nonnull PreparedFile file) throws IOException, NBTException;
 	}
 }

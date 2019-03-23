@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.zip.GZIPInputStream;
+import me.ferrybig.java.minecraft.nbt.exception.NBTException;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -113,7 +114,7 @@ public class ArchieveInputSource implements InputSource {
 			}
 
 			@Override
-			public void forAllFiles(InputInfo.FileConsumer consumer) throws IOException {
+			public void forAllFiles(InputInfo.FileConsumer consumer) throws IOException, NBTException {
 				ArchiveEntry nextEntry;
 				while ((nextEntry = in.getNextEntry()) != null) {
 					String fileName = nextEntry.getName();

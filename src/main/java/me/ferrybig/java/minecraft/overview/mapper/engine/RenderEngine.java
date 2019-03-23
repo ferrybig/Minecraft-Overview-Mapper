@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import me.ferrybig.java.minecraft.nbt.exception.NBTException;
 import me.ferrybig.java.minecraft.overview.mapper.input.InputInfo;
 import me.ferrybig.java.minecraft.overview.mapper.input.InputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
@@ -140,7 +141,7 @@ public class RenderEngine implements Closeable {
 		}
 	}
 
-	public void render() throws IOException {
+	public void render() throws IOException, NBTException {
 		RenderCache cacheInstance;
 		if (this.imageWriter.supportsCache()) {
 			cacheInstance = new RenderCache(this.imageWriter.cacheFile(), this.imageWriter.cacheBackupFile());
@@ -283,7 +284,7 @@ public class RenderEngine implements Closeable {
 			}
 
 			@Override
-			public void consume(PreparedFile prepared) throws IOException {
+			public void consume(PreparedFile prepared) throws IOException, NBTException {
 				final WorldFile file = prepared.getFile();
 				if (!hasSendFullFileList) {
 					imageWriter.addKnownFile(file);

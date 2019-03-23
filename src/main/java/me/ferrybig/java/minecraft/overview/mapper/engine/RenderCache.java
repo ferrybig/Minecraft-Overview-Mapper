@@ -26,6 +26,7 @@ public class RenderCache implements Closeable {
 	private final Map<String, CacheEntry> entries;
 	@Nonnull
 	private final BufferedWriter writer;
+	private static final String VERSION = "#v1.0\n";
 
 	public RenderCache(@Nonnull Path normalFile, @Nonnull Path backupFile) throws IOException {
 		boolean normalExists = Files.exists(normalFile);
@@ -34,7 +35,8 @@ public class RenderCache implements Closeable {
 			Files.move(normalFile, backupFile, ATOMIC_MOVE);
 		}
 		Map<String, CacheEntry> entries = new HashMap<>();
-		if (normalExists || backupExists) {
+		boolean hasExistingData = normalExists || backupExists;
+		if (hasExistingData) {
 			// Existing files exists, and have been moved to the backup file
 			try (BufferedReader reader = Files.newBufferedReader(backupFile, StandardCharsets.UTF_8)) {
 				String nextLine;
@@ -47,7 +49,7 @@ public class RenderCache implements Closeable {
 			}
 			// Recreate normal file
 			try (BufferedWriter writer = Files.newBufferedWriter(normalFile, StandardCharsets.UTF_8)) {
-				writer.write("#v1.0\n");
+				writer.write(VERSION);
 				for (CacheEntry entry : entries.values()) {
 					writer.write(entry.toLine());
 				}
@@ -57,6 +59,9 @@ public class RenderCache implements Closeable {
 		this.entries = new ConcurrentHashMap<>(entries);
 		Files.createDirectories(normalFile.getParent());
 		this.writer = Files.newBufferedWriter(normalFile, StandardCharsets.UTF_8, StandardOpenOption.APPEND, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+		if (!hasExistingData) {
+			writer.write(VERSION);
+		}
 	}
 
 	public int getLastModificationDate(@Nonnull String fileName) {
