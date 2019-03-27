@@ -3,12 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.nbt;
 
 import javax.annotation.Nonnull;
 
 public class ByteTag extends SimpleTag {
+
 	private final byte value;
 
 	public ByteTag(byte value) {

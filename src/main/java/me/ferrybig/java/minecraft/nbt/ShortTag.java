@@ -3,12 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.nbt;
 
 import javax.annotation.Nonnull;
 
 public final class ShortTag extends SimpleTag {
+
 	private final short value;
 
 	public ShortTag(short value) {
@@ -51,7 +51,7 @@ public final class ShortTag extends SimpleTag {
 
 	@Override
 	public String toString() {
-		return "ShortTag{"  + value + '}';
+		return "ShortTag{" + value + '}';
 	}
 
 }

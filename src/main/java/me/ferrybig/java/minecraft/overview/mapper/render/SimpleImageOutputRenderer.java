@@ -5,13 +5,13 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
-import me.ferrybig.java.minecraft.nbt.CompoundTag;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.imageio.ImageIO;
+import me.ferrybig.java.minecraft.nbt.CompoundTag;
 
 /**
  *

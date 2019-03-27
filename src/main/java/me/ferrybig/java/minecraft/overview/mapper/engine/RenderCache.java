@@ -46,7 +46,7 @@ public class RenderCache implements Closeable {
 				while ((nextLine = reader.readLine()) != null) {
 					if (nextLine.startsWith("#")) {
 						Version newVersion = Version.getVersion(nextLine.substring(1));
-						if(newVersion != null) {
+						if (newVersion != null) {
 							version = newVersion;
 						}
 						continue;
@@ -148,8 +148,7 @@ public class RenderCache implements Closeable {
 
 	private static enum Version {
 		VERSION_1_0("v1.0", CacheEntry::readFromLineV1_0),
-		VERSION_1_1("v1.1", CacheEntry::readFromLineV1_1),
-		;
+		VERSION_1_1("v1.1", CacheEntry::readFromLineV1_1),;
 		@Nonnull
 		private final Function<String, CacheEntry> mapper;
 		@Nonnull
@@ -159,7 +158,7 @@ public class RenderCache implements Closeable {
 			this.versionString = versionString;
 			this.mapper = mapper;
 		}
-		
+
 		@Nullable
 		public CacheEntry readLine(@Nonnull String line) {
 			return this.mapper.apply(line);
@@ -180,7 +179,7 @@ public class RenderCache implements Closeable {
 		static {
 			Version[] values = values();
 			Map<String, Version> versions = new HashMap<>(values.length);
-			for(Version v : values) {
+			for (Version v : values) {
 				versions.put(v.versionString, v);
 			}
 			VERSIONS = Collections.unmodifiableMap(versions);

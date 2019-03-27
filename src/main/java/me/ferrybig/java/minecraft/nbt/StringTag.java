@@ -3,13 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.nbt;
 
 import java.util.Objects;
 import javax.annotation.Nonnull;
 
 public class StringTag extends SimpleTag {
+
 	private final String value;
 
 	public StringTag(String value) {

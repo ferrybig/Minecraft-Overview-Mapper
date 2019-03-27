@@ -10,9 +10,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.concurrent.CancellationException;
 import me.ferrybig.java.minecraft.nbt.exception.NBTException;
 import me.ferrybig.java.minecraft.overview.mapper.engine.AbstractProgressReporter;
 import me.ferrybig.java.minecraft.overview.mapper.engine.RenderEngine;
+import me.ferrybig.java.minecraft.overview.mapper.engine.RenderException;
 import me.ferrybig.java.minecraft.overview.mapper.engine.RenderOptions;
 import me.ferrybig.java.minecraft.overview.mapper.input.ArchieveInputSource;
 import me.ferrybig.java.minecraft.overview.mapper.input.DirectoryInputSource;
@@ -36,7 +38,7 @@ import org.apache.commons.cli.ParseException;
 
 public class Main {
 
-	public static void main(String[] args) throws IOException, ParseException, NBTException {
+	public static void main(String[] args) throws IOException, ParseException, NBTException, RenderException, CancellationException, InterruptedException {
 		// create Options object
 		Options options = new Options();
 
@@ -132,13 +134,13 @@ public class Main {
 
 		RenderEngine engine;
 		if (cmd.hasOption(sequentional.getOpt())) {
-			engine = RenderEngine.sequential(renderOptions);
+			engine = RenderEngine.sequential();
 		} else {
-			engine = RenderEngine.parellel(renderOptions, Runtime.getRuntime().availableProcessors());
+			engine = RenderEngine.parellel(Runtime.getRuntime().availableProcessors());
 		}
 
 		System.out.println("Starting render...");
-		engine.render();
+		engine.runJob(renderOptions);
 		System.out.println("Done!");
 	}
 }

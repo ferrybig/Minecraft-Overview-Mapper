@@ -5,9 +5,6 @@
  */
 package me.ferrybig.java.minecraft.nbt;
 
-import me.ferrybig.java.minecraft.nbt.exception.MalformedNBTException;
-import me.ferrybig.java.minecraft.nbt.exception.NBTException;
-import me.ferrybig.java.minecraft.nbt.exception.UnknownNBTException;
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -16,6 +13,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
+import me.ferrybig.java.minecraft.nbt.exception.MalformedNBTException;
+import me.ferrybig.java.minecraft.nbt.exception.NBTException;
+import me.ferrybig.java.minecraft.nbt.exception.UnknownNBTException;
 
 /**
  *
@@ -68,7 +68,7 @@ public enum TagType {
 		@Override
 		public Tag read(DataInput in) throws IOException, NBTException {
 			int length = in.readInt();
-			if(length < 0) {
+			if (length < 0) {
 				throw new MalformedNBTException("Byte array with a size lower than 0 encountered");
 			}
 			byte[] array = new byte[length];
@@ -82,7 +82,7 @@ public enum TagType {
 		public Tag read(DataInput in) throws IOException, NBTException {
 
 			int length = in.readShort();
-			if(length < 0) {
+			if (length < 0) {
 				throw new MalformedNBTException("String with a size lower than 0 encountered");
 			}
 			byte[] string = new byte[length];
@@ -96,14 +96,14 @@ public enum TagType {
 		public Tag read(DataInput in) throws IOException, NBTException {
 			TagType type = getById(in.readByte());
 			int length = in.readInt();
-			if(length < 0) {
+			if (length < 0) {
 				throw new MalformedNBTException("List with a size lower than 0 encountered");
 			}
 			if (type == null && length > 0) {
 				throw new MalformedNBTException("A list cannot exists of TAG_END tags");
 			}
 			List<Tag> list = new ArrayList<>(length);
-			for(int i = 0; i < length; i++) {
+			for (int i = 0; i < length; i++) {
 				list.add(type.read(in));
 			}
 			return new ListTag(type == null ? BYTE : type, list, false);
@@ -114,13 +114,13 @@ public enum TagType {
 		@Override
 		public Tag read(DataInput in) throws IOException, NBTException {
 			Map<String, Tag> tagMap = new HashMap<>();
-			while(true) {
+			while (true) {
 				TagType type = getById(in.readByte());
-				if(type == null) {
+				if (type == null) {
 					return new CompoundTag(tagMap, false);
 				}
 				int length = in.readShort();
-				if(length < 0) {
+				if (length < 0) {
 					throw new MalformedNBTException("Tag name with a size lower than 0 encountered");
 				}
 				byte[] string = new byte[length];
@@ -134,7 +134,7 @@ public enum TagType {
 		@Override
 		public Tag read(DataInput in) throws IOException, NBTException {
 			int length = in.readInt();
-			if(length < 0) {
+			if (length < 0) {
 				throw new MalformedNBTException("Int array with a size lower than 0 encountered");
 			}
 			int[] array = new int[length];
@@ -149,7 +149,7 @@ public enum TagType {
 		@Override
 		public Tag read(DataInput in) throws IOException, NBTException {
 			int length = in.readInt();
-			if(length < 0) {
+			if (length < 0) {
 				throw new MalformedNBTException("Long array with a size lower than 0 encountered");
 			}
 			long[] array = new long[length];
@@ -159,8 +159,7 @@ public enum TagType {
 			return new LongArrayTag(array);
 		}
 
-	},
-	;
+	},;
 	private final int id;
 
 	private TagType(int id) {
@@ -174,7 +173,7 @@ public enum TagType {
 	public abstract Tag read(DataInput in) throws IOException, NBTException;
 
 	private static final TagType[] values;
-	
+
 	@Nullable
 	public static TagType getById(int id) throws UnknownNBTException {
 		try {
@@ -183,9 +182,10 @@ public enum TagType {
 			throw new UnknownNBTException(e);
 		}
 	}
+
 	static {
 		values = new TagType[13];
-		for(TagType t : values()) {
+		for (TagType t : values()) {
 			values[t.getId()] = t;
 		}
 	}

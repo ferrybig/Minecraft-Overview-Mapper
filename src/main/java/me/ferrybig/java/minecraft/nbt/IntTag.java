@@ -3,12 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.nbt;
 
 import javax.annotation.Nonnull;
 
 public class IntTag extends SimpleTag {
+
 	private final int value;
 
 	public IntTag(int value) {

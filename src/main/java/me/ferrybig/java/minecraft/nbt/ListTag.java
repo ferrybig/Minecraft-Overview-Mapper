@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.nbt;
 
 import java.util.ArrayList;
@@ -24,13 +23,14 @@ public class ListTag extends Tag implements Iterable<Tag> {
 	public ListTag(TagType contents, List<? extends Tag> list) {
 		this(contents, list, true);
 	}
+
 	public ListTag(TagType contents, List<? extends Tag> list, boolean copy) {
 		super(TagType.LIST);
 		this.contents = Objects.requireNonNull(contents, "contents");
 		if (copy) {
 			List<Tag> newList = new ArrayList<>(list.size());
-			for(Tag tag : list) {
-				if(tag.getType() != contents) {
+			for (Tag tag : list) {
+				if (tag.getType() != contents) {
 					throw new IllegalArgumentException("Passed list contains tag of a differend type: " + tag.getType());
 				}
 				newList.add(tag);
@@ -59,18 +59,19 @@ public class ListTag extends Tag implements Iterable<Tag> {
 		return list.isEmpty();
 	}
 
+	@Override
 	public Iterator<Tag> iterator() {
 		return list.iterator();
 	}
 
 	@SuppressWarnings("unchecked")
 	public Iterable<? extends CompoundTag> compoundTagIterable() {
-		if(this.contents != TagType.COMPOUND) {
+		if (this.contents != TagType.COMPOUND) {
 			throw new IllegalArgumentException("Cannot cast iterator to compound tag iterator");
 		}
 		return () -> new Iterator<CompoundTag>() {
 			Iterator<Tag> iterator = list.iterator();
-			
+
 			@Override
 			public boolean hasNext() {
 				return iterator.hasNext();
@@ -78,7 +79,7 @@ public class ListTag extends Tag implements Iterable<Tag> {
 
 			@Override
 			public CompoundTag next() {
-				return (CompoundTag)iterator.next();
+				return (CompoundTag) iterator.next();
 			}
 		};
 	}
@@ -109,9 +110,9 @@ public class ListTag extends Tag implements Iterable<Tag> {
 		}
 	}
 
-	public List<Resolveable> resolveList(String ... path) {
+	public List<Resolveable> resolveList(String... path) {
 		List<Resolveable> resolvables = new ArrayList<>(this.size());
-		for(Tag t : this.list) {
+		for (Tag t : this.list) {
 			resolvables.add(t.resolve(path));
 		}
 		return resolvables;

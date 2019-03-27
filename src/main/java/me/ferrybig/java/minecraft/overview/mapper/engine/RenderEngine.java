@@ -5,21 +5,18 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.engine;
 
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -53,40 +50,27 @@ public class RenderEngine implements Closeable {
 		}
 	};
 
-	@Nonnull
-	private final InputSource files;
-	@Nonnull
-	private final RegionRenderer renderer;
-	@Nonnull
-	private final ImageWriter imageWriter;
-	@Nonnull
-	private final ProgressReporter reporter;
 	@Nullable
 	private final ParallelOptions parallel;
 
-	private RenderEngine(@Nonnull RenderOptions options, @Nullable ParallelOptions parallel) {
-		Objects.requireNonNull(options, "options");
-		this.files = options.getFiles();
-		this.renderer = options.getRenderer();
-		this.imageWriter = options.getImageWriter();
-		this.reporter = options.getProgress();
+	private RenderEngine(@Nullable ParallelOptions parallel) {
 		this.parallel = parallel;
 	}
 
-	public static RenderEngine sequential(@Nonnull RenderOptions options) {
-		return new RenderEngine(options, null);
+	public static RenderEngine sequential() {
+		return new RenderEngine(null);
 	}
 
-	public static RenderEngine parellel(@Nonnull RenderOptions options, int maxTasks, ExecutorService pool) {
-		return new RenderEngine(options, new ParallelOptions(false, maxTasks, pool));
+	public static RenderEngine parellel(int maxTasks, ExecutorService pool) {
+		return new RenderEngine(new ParallelOptions(false, maxTasks, pool));
 	}
 
-	public static RenderEngine parellel(@Nonnull RenderOptions options, int maxTasks) {
-		return parellel(options, maxTasks, Thread.MIN_PRIORITY);
+	public static RenderEngine parellel(int maxTasks) {
+		return parellel(maxTasks, Thread.MIN_PRIORITY);
 	}
 
-	public static RenderEngine parellel(@Nonnull RenderOptions options, int maxTasks, int priority) {
-		return parellel(options, maxTasks, new ThreadFactory() {
+	public static RenderEngine parellel(int maxTasks, int priority) {
+		return parellel(maxTasks, new ThreadFactory() {
 
 			private final ThreadFactory parent = Executors.defaultThreadFactory();
 			private final AtomicInteger id = new AtomicInteger();
@@ -105,11 +89,11 @@ public class RenderEngine implements Closeable {
 		});
 	}
 
-	public static RenderEngine parellel(@Nonnull RenderOptions options, int maxTasks, ThreadFactory factory) {
+	public static RenderEngine parellel(int maxTasks, ThreadFactory factory) {
 		ExecutorService service = Executors.newFixedThreadPool(maxTasks, factory);
 		boolean success = false;
 		try {
-			RenderEngine engine = new RenderEngine(options, new ParallelOptions(true, maxTasks, service));
+			RenderEngine engine = new RenderEngine(new ParallelOptions(true, maxTasks, service));
 			success = true;
 			return engine;
 		} finally {
@@ -127,7 +111,6 @@ public class RenderEngine implements Closeable {
 				parallel.getPool().shutdown();
 			}
 		}
-		imageWriter.close();
 	}
 
 	private boolean canConsume(WorldFile file) {
@@ -141,15 +124,40 @@ public class RenderEngine implements Closeable {
 		}
 	}
 
-	public void render() throws IOException, NBTException {
-		RenderCache cacheInstance;
-		if (this.imageWriter.supportsCache()) {
-			cacheInstance = new RenderCache(this.imageWriter.cacheFile(), this.imageWriter.cacheBackupFile());
+	@Nullable
+	private Set<WorldFile> prepareJob(InputInfo task, ImageWriter imageWriter) {
+		Collection<WorldFile> fileNames = task.getKnownFiles();
+		if (fileNames.isEmpty()) {
+			System.out.println("Input files not known");
+			return null;
 		} else {
-			cacheInstance = null;
+			System.out.println("We have a full list of files! " + fileNames.size());
+			Set<WorldFile> processedFiles = fileNames.stream().filter(this::canConsume).collect(Collectors.toSet());
+			imageWriter.addKnownFiles(processedFiles);
+			List<Runnable> filesKnown = imageWriter.filesKnown();
+			for (Runnable run : filesKnown) {
+				run.run();
+			}
+			return processedFiles;
 		}
+	}
 
-		try (RenderCache cache = cacheInstance; InputInfo inputTask = this.files.generateFileListing()) {
+	@Nullable
+	private RenderCache makeCache(ImageWriter imageWriter) throws IOException {
+		if (imageWriter.supportsCache()) {
+			return new RenderCache(imageWriter.cacheFile(), imageWriter.cacheBackupFile());
+		} else {
+			return null;
+		}
+	}
+
+	public void runJob(RenderOptions options) throws RenderException, InterruptedException, CancellationException {
+		InputSource files = options.getFiles();
+		RegionRenderer renderer = options.getRenderer();
+		ImageWriter imageWriter = options.getImageWriter();
+		ProgressReporter reporter = options.getProgress();
+
+		try (InputInfo inputTask = files.generateFileListing(); RenderCache cache = makeCache(imageWriter)) {
 			System.out.println("Render start!");
 			imageWriter.startRender();
 
@@ -157,24 +165,20 @@ public class RenderEngine implements Closeable {
 			final int totalFiles;
 			final boolean hasSendFullFileList;
 			{
-				Collection<WorldFile> fileNames = inputTask.getKnownFiles();
-				if (fileNames.isEmpty()) {
+				Set<WorldFile> preparedJob = prepareJob(inputTask, imageWriter);
+				if (preparedJob == null) {
 					processedFiles = new HashSet<>();
-					System.out.println("Input files not known");
 					totalFiles = -1;
 					hasSendFullFileList = false;
 				} else {
-					System.out.println("We have a full list of files! " + fileNames.size());
-					processedFiles = fileNames.stream().filter(this::canConsume).collect(Collectors.toSet());
-					imageWriter.addKnownFiles(processedFiles);
+					processedFiles = preparedJob;
 					totalFiles = processedFiles.size();
 					hasSendFullFileList = true;
-					for (Runnable run : imageWriter.filesKnown()) {
-						run.run();
-					}
 				}
 			}
-			final InputInfo.FileConsumer infoConsumer = makeInfoConsumer(hasSendFullFileList, processedFiles, totalFiles, cache);
+			final InputInfo.FileConsumer infoConsumer = makeInfoConsumer(
+				hasSendFullFileList, processedFiles, totalFiles, cache, renderer, imageWriter, reporter
+			);
 			final ParallelOptions parallelOptions = this.parallel;
 
 			if (parallelOptions == null) {
@@ -187,88 +191,31 @@ public class RenderEngine implements Closeable {
 				}
 			} else {
 				final int maxTasks = parallelOptions.getMaxTasks();
-				try {
-					// paralell operation
-					inputTask.forAllFilesParalel(infoConsumer, maxTasks, parallelOptions.getPool());
-				} catch (InterruptedException ex) {
-					Thread.currentThread().interrupt();
-					throw new UncheckedExecutionException(ex);
-				}
+				inputTask.forAllFilesParalel(infoConsumer, maxTasks, parallelOptions.getPool());
 
 				if (!hasSendFullFileList) {
 					List<Runnable> tasks = imageWriter.filesKnown();
-					int size = tasks.size();
-					if (size > maxTasks) {
-						// Todo: outfactor this dublicated logic
-						CountDownLatch latch = new CountDownLatch(maxTasks);
-						AtomicInteger fileIndex = new AtomicInteger();
-						Runnable task = new Runnable() {
-							private void runItem(Runnable task) throws IOException {
-								task.run();
-							}
-
-							private Runnable newTask() {
-								if (Thread.currentThread().isInterrupted()) {
-									return null;
-								}
-								int index = fileIndex.getAndIncrement();
-								if (index < size) {
-									return tasks.get(index);
-								}
-								return null;
-							}
-
-							@Override
-							public void run() {
-								Runnable task;
-								try {
-									while ((task = newTask()) != null) {
-										runItem(task);
-									}
-								} catch (Throwable ex) {
-									ex.printStackTrace();
-								}
-								latch.countDown();
-							}
-						};
-						for (int i = 0; i < maxTasks; i++) {
-							parallelOptions.getPool().submit(task);
-						}
-						try {
-							latch.await();
-						} catch (InterruptedException ex) {
-							Thread.currentThread().interrupt();
-							throw new UncheckedExecutionException(ex);
-						}
-					} else if (size > 0) {
-						List<Future<?>> futures = new ArrayList<>(size);
-						for (Runnable task : tasks) {
-							futures.add(parallelOptions.getPool().submit(task));
-						}
-						assert futures.size() == size;
-						for (Future<?> f : futures) {
-							try {
-								f.get();
-							} catch (InterruptedException ex) {
-								Thread.currentThread().interrupt();
-								throw new UncheckedExecutionException(ex);
-							} catch (ExecutionException ex) {
-								throw new UncheckedExecutionException(ex);
-							}
-						}
-					}
+					new ParallelTaskRunner<>(parallelOptions.getPool(), parallelOptions.getMaxTasks(), tasks, Runnable::run)
+						.start()
+						.waitForResult();
 				}
 			}
 
 			imageWriter.finishRender();
+		} catch (IOException | NBTException | ExecutionException ex) {
+			throw new RenderException(ex);
 		}
 	}
 
-	public InputInfo.FileConsumer makeInfoConsumer(
+	@Nonnull
+	private InputInfo.FileConsumer makeInfoConsumer(
 		final boolean hasSendFullFileList,
 		final Set<WorldFile> processedFiles,
 		final int totalFiles,
-		final RenderCache cache
+		final RenderCache cache,
+		RegionRenderer renderer,
+		ImageWriter imageWriter,
+		ProgressReporter reporter
 	) {
 		return new InputInfo.FileConsumer() {
 			private final AtomicInteger processedFilesCount = new AtomicInteger();
@@ -292,31 +239,31 @@ public class RenderEngine implements Closeable {
 				} else {
 					assert processedFiles.contains(file);
 				}
-				RenderEngine.this.reporter.onFileStart(file);
+				reporter.onFileStart(file);
 				switch (file.getType()) {
 					case REGION_MCA: {
 						final String orignalName = file.getOrignalName();
 						int lastModification = cache.getLastModificationDate(orignalName);
-						RenderOutput render = RenderEngine.this.renderer.renderFile(prepared, lastModification);
+						RenderOutput render = renderer.renderFile(prepared, lastModification);
 						if (render.getOutput() != null) {
-							RenderEngine.this.imageWriter.addFile(file, render.getOutput());
+							imageWriter.addFile(file, render.getOutput());
 							cache.storeLastModificationDate(orignalName, render.getLastModification());
 						} else {
 							System.out.println("Using file from cache: " + orignalName);
-							RenderEngine.this.imageWriter.addCachedFile(file);
+							imageWriter.addCachedFile(file);
 						}
 					}
 					break;
 					default: {
-						RenderEngine.this.imageWriter.addFile(file, prepared);
+						imageWriter.addFile(file, prepared);
 					}
 				}
 				int processed = processedFilesCount.incrementAndGet();
 				if (hasSendFullFileList) {
 					double progress = processed * 100d / totalFiles;
-					RenderEngine.this.reporter.onProgress(progress, processed, totalFiles);
+					reporter.onProgress(progress, processed, totalFiles);
 				}
-				RenderEngine.this.reporter.onFileEnd(file);
+				reporter.onFileEnd(file);
 
 			}
 		};

@@ -9,15 +9,15 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import me.ferrybig.java.minecraft.nbt.exception.NBTException;
+import me.ferrybig.java.minecraft.overview.mapper.engine.ParallelTaskRunner;
 
 public abstract class SimpleInputInfo implements InputInfo {
 
@@ -87,43 +87,25 @@ public abstract class SimpleInputInfo implements InputInfo {
 			InputInfo.super.forAllFilesParalel(consumer, maxTasks, executor);
 			return;
 		}
-		WorldFile[] worldFiles = this.getSortedList(consumer).toArray(WorldFile[]::new);
-		int worldFilesLength = worldFiles.length;
-		CountDownLatch latch = new CountDownLatch(maxTasks);
-		AtomicInteger fileIndex = new AtomicInteger();
-		Runnable task = new Runnable() {
-			private void runItem(WorldFile file) throws IOException, NBTException {
-				consumer.consume(toPreparedFile(file));
-			}
-
-			private WorldFile newTask() {
-				if (Thread.currentThread().isInterrupted()) {
-					return null;
+		try {
+			WorldFile[] worldFiles = this.getSortedList(consumer).toArray(WorldFile[]::new);
+			new ParallelTaskRunner<>(executor, maxTasks, worldFiles, w -> consumer.consume(toPreparedFile(w))).start().waitForResult();
+		} catch (ExecutionException ex) {
+			Throwable cause = ex.getCause();
+			if (cause instanceof IOException) {
+				for (Throwable suppressed : ex.getSuppressed()) {
+					cause.addSuppressed(suppressed);
 				}
-				int index = fileIndex.getAndIncrement();
-				if (index < worldFilesLength) {
-					return worldFiles[index];
+				throw (IOException) cause;
+			} else if (cause instanceof NBTException) {
+				for (Throwable suppressed : ex.getSuppressed()) {
+					cause.addSuppressed(suppressed);
 				}
-				return null;
+				throw (NBTException) cause;
+			} else {
+				throw new RuntimeException(ex);
 			}
-
-			@Override
-			public void run() {
-				WorldFile task;
-				try {
-					while ((task = newTask()) != null) {
-						runItem(task);
-					}
-				} catch (Throwable ex) {
-					ex.printStackTrace();
-				}
-				latch.countDown();
-			}
-		};
-		for (int i = 0; i < maxTasks; i++) {
-			executor.submit(task);
 		}
-		latch.await();
 	}
 
 	@Override

@@ -13,7 +13,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
@@ -136,11 +135,11 @@ public class DefaultImageRenderer implements RegionRenderer {
 		for (int i = 0; i < MAX_CHUNK_SECTIONS; i++) {
 			sectionsUsed[i] = false;
 		}
-		ByteArrayTag biomesTag = (ByteArrayTag)levelTag.resolveOrNull("Biomes");
+		ByteArrayTag biomesTag = (ByteArrayTag) levelTag.resolveOrNull("Biomes");
 		if (biomesTag != null) {
 			System.arraycopy(biomesTag.get(), 0, biomeIds, 0, 16 * 16);
 		} else {
-			Arrays.fill(biomeIds, (byte)-1);
+			Arrays.fill(biomeIds, (byte) -1);
 		}
 
 		for (Tag sectionInfo : levelTag.resolve("Sections").asListTag()) {

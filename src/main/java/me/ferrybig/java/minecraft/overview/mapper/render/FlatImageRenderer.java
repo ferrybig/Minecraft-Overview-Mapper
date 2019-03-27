@@ -14,19 +14,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import me.ferrybig.java.minecraft.nbt.ByteTag;
 import me.ferrybig.java.minecraft.nbt.CompoundTag;
-import me.ferrybig.java.minecraft.nbt.IntArrayTag;
-import me.ferrybig.java.minecraft.nbt.IntTag;
 import me.ferrybig.java.minecraft.nbt.ListTag;
-import me.ferrybig.java.minecraft.nbt.LongArrayTag;
-import me.ferrybig.java.minecraft.nbt.Resolveable;
-import me.ferrybig.java.minecraft.nbt.StringTag;
 import me.ferrybig.java.minecraft.nbt.Tag;
 import me.ferrybig.java.minecraft.nbt.exception.NBTException;
 import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
@@ -218,7 +211,7 @@ public class FlatImageRenderer implements RegionRenderer {
 		int[] biomes,
 		ChunkSection[] chunkSections
 	) throws ExecutionException {
-		ListTag sections = (ListTag)levelTag.resolveOrNull("Sections");
+		ListTag sections = (ListTag) levelTag.resolveOrNull("Sections");
 		if (sections == null) {
 			return; // This is an empty chunk
 		}
@@ -240,7 +233,7 @@ public class FlatImageRenderer implements RegionRenderer {
 				Tag palleteRoot = pallete.get(i);
 				String blockId = palleteRoot.resolve("Name").asStringTag().get();
 				Map<String, String> properties;
-				CompoundTag propertiesNode = (CompoundTag)palleteRoot.resolveOrNull("Properties");
+				CompoundTag propertiesNode = (CompoundTag) palleteRoot.resolveOrNull("Properties");
 				if (propertiesNode != null) {
 					properties = new LinkedHashMap<>();
 					Iterator<? extends Map.Entry<String, ? extends Tag>> iterator = propertiesNode.get().entrySet().iterator();

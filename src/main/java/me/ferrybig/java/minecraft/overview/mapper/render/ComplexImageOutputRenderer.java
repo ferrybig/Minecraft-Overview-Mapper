@@ -5,7 +5,6 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
-import me.ferrybig.java.minecraft.nbt.CompoundTag;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -29,6 +28,7 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.imageio.ImageIO;
+import me.ferrybig.java.minecraft.nbt.CompoundTag;
 import me.ferrybig.java.minecraft.overview.mapper.input.WorldFile;
 import me.ferrybig.java.minecraft.overview.mapper.input.WorldFile.Type;
 

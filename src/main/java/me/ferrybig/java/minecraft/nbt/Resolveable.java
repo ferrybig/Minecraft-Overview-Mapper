@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.nbt;
 
 import java.util.Arrays;
@@ -12,6 +11,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public abstract class Resolveable {
+
 	public abstract Tag asTag();
 
 	@Nonnull
@@ -77,11 +77,11 @@ public abstract class Resolveable {
 	@Nonnull
 	public Resolveable resolve(String... path) {
 		Resolveable node = this;
-		for(int i = 0; i < path.length; i++) {
+		for (int i = 0; i < path.length; i++) {
 			try {
 				node = node.resolveNode(path[i]);
-			} catch(UnsupportedOperationException e) {
-				throw (NoSuchElementException)new NoSuchElementException("Could not find path to " + Arrays.toString(Arrays.copyOf(path, i))).initCause(e);
+			} catch (UnsupportedOperationException e) {
+				throw (RuntimeException) new NoSuchElementException("Could not find path to " + Arrays.toString(Arrays.copyOf(path, i))).initCause(e);
 			}
 			if (node == null) {
 				throw new NoSuchElementException("Could not find path to " + Arrays.toString(Arrays.copyOf(path, i)));
@@ -93,9 +93,9 @@ public abstract class Resolveable {
 	@Nullable
 	public Resolveable resolveOrNull(String... path) {
 		Resolveable node = this;
-		for(int i = 0; i < path.length; i++) {
+		for (int i = 0; i < path.length; i++) {
 			node = node.resolveNode(path[i]);
-			if(node == null) {
+			if (node == null) {
 				return null;
 			}
 		}

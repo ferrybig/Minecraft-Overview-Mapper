@@ -3,19 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package me.ferrybig.java.minecraft.nbt;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 public class CompoundTag extends Tag {
@@ -25,6 +16,7 @@ public class CompoundTag extends Tag {
 	public CompoundTag(Map<String, ? extends Tag> map) {
 		this(map, true);
 	}
+
 	public CompoundTag(Map<String, ? extends Tag> map, boolean copy) {
 		super(TagType.COMPOUND);
 		if (copy) {
