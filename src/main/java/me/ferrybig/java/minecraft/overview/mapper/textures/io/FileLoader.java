@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -33,6 +34,10 @@ public class FileLoader implements Closeable {
 	public void addFile(File file) throws IOException {
 		// todo support loading resource pack from directory
 		this.files.add(new ZipFile(file));
+	}
+
+	public void addFile(Path file) throws IOException {
+		this.addFile(file.toFile());
 	}
 
 	@Override
