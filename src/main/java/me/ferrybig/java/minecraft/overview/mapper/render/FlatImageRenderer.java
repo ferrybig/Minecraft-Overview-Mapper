@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -66,11 +67,15 @@ public class FlatImageRenderer implements RegionRenderer {
 	private static final int PIXELS_IN_REGION = BLOCKS_IN_REGION * IMAGE_SIZE;
 	private static final int TOTAL_BLOCKS_IN_REGION = BLOCKS_IN_REGION * BLOCKS_IN_REGION;
 	private static final int CHUNKS_IN_REGION = 32;
+	private static final int SHADE_CUTOFF = 20;
 
 	private static final boolean DEBUG = false;
 
 	private static int clampToByte(int val) {
 		return val > 255 ? 255 : val < 0 ? 0 : val;
+	}
+	private static int clampToRange(int val, int min, int max) {
+		return val > max ? max : val < min ? min : val;
 	}
 
 	private static void readBiomeList(int[] biomes, Tag biomeTag) {
@@ -118,14 +123,8 @@ public class FlatImageRenderer implements RegionRenderer {
 				} else {
 					zAxisShade = (heights[heightIndex + 1] - heights[heightIndex - 1]) * 2;
 				}
-				int totalShade = xAxisShade + zAxisShade;
+				int totalShade = clampToRange(xAxisShade + zAxisShade, -SHADE_CUTOFF, SHADE_CUTOFF);
 				if (totalShade != 0) {
-					if (totalShade > 10) {
-						totalShade = 10;
-					}
-					if (totalShade < -10) {
-						totalShade = -10;
-					}
 					image.getRaster().getDataElements(x * IMAGE_SIZE, z * IMAGE_SIZE, IMAGE_SIZE, IMAGE_SIZE, dstPixelsCache);
 					double adjustedShade = totalShade / 7.0D * 8;
 					shade(dstPixelsCache, (int) adjustedShade);
@@ -135,14 +134,13 @@ public class FlatImageRenderer implements RegionRenderer {
 		}
 	}
 
+	@Nonnull
 	private final TextureCache textures;
+	@Nonnull
 	private final ChunkSection emptyChunkSection;
 
-	private final BiomeMap biomeMap;
-
-	public FlatImageRenderer(TextureCache textures, BiomeMap biomeMap) {
-		this.textures = textures;
-		this.biomeMap = biomeMap;
+	public FlatImageRenderer(@Nonnull TextureCache textures) {
+		this.textures = Objects.requireNonNull(textures, "textures");
 		try {
 			this.emptyChunkSection = new ChunkSection(
 				1,
@@ -404,5 +402,10 @@ public class FlatImageRenderer implements RegionRenderer {
 			return empty;
 		}
 
+	}
+
+	@Override
+	public String toString() {
+		return "FlatImageRenderer{" + textures + '}';
 	}
 }

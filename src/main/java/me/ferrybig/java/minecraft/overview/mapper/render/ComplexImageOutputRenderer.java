@@ -48,6 +48,7 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 	private final int normalRes = 512;
 	private final int halfRes = normalRes / 2;
 	private final int maxZoom;
+	private final int minZoom;
 	@Nonnull
 	private final String imageFormat = "png";
 	@Nonnull
@@ -64,6 +65,7 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 		this.outputDir = Objects.requireNonNull(outputDir, "outputDir");
 		this.images = outputDir.resolve("complex-tiles");
 		this.maxZoom = maxZoom;
+		this.minZoom = minZoom;
 		{
 			LayerConnector zoomLayer = null;
 			for (int currentZoom = minZoom; currentZoom < this.normalZoom; currentZoom++) {
@@ -201,6 +203,11 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 			&& file.getDimension() == 0) {
 			this.zoomLayer.addKnownFile(file.getX(), file.getZ());
 		}
+	}
+
+	@Override
+	public String toString() {
+		return "ComplexImageOutputRenderer{" + "outputDir=" + outputDir + ", minZoom=" + minZoom + ", maxZoom=" + maxZoom + ", imageExtension=" + imageExtension + '}';
 	}
 
 	private static class ImageEntry {

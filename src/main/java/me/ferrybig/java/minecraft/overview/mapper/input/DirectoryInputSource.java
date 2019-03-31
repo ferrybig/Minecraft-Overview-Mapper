@@ -44,4 +44,9 @@ public class DirectoryInputSource implements InputSource {
 		};
 	}
 
+	@Override
+	public String toString() {
+		return "DirectoryInputSource{" + root + '}';
+	}
+
 }
