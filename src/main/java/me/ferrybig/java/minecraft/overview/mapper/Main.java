@@ -107,10 +107,10 @@ public class Main {
 				if (latestVersion.isPresent()) {
 					return Collections.singletonList(latestVersion.get());
 				} else {
-					throw new IOException("Could not figure out latestminecraft version, could not figure out latest version");
+					throw new IOException("Could not figure out minecraft resource pack, could not figure out latest minecraft version");
 				}
 			} else {
-				throw new IOException("Could not figure out latestminecraft version, could not locate minecraft directory");
+				throw new IOException("Could not figure out minecraft resource pack, could not locate minecraft directory");
 			}
 		} else {
 			String[] pathArgs = args.split(File.pathSeparator);
