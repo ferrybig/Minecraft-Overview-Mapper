@@ -97,6 +97,7 @@ public class Main {
 		return Optional.of(p);
 	}
 
+	@Nonnull
 	public static List<Path> locateTexturePacks(@Nullable String args, @Nullable String minecraftDir) throws IOException {
 		Optional<Path> minecraftVersionsLocation = minecraftDir == null
 			? getMinecraftDirectory()
@@ -200,6 +201,7 @@ public class Main {
 			.argName("minecraft-directory")
 			.desc("Directory where minecraft files can be found")
 			.longOpt("minecraft-directory")
+			.hasArg()
 			.build();
 
 		Option texturePacks = Option
@@ -207,6 +209,7 @@ public class Main {
 			.argName("textures")
 			.desc("List of texture paths to texture packs, seperated by " + File.pathSeparator)
 			.longOpt("textures")
+			.hasArg()
 			.build();
 
 		options.addOption(input);
