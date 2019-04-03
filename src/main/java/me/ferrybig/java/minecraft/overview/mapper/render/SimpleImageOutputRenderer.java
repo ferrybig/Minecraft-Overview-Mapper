@@ -5,13 +5,13 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
-import com.flowpowered.nbt.CompoundTag;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.imageio.ImageIO;
+import me.ferrybig.java.minecraft.nbt.CompoundTag;
 
 /**
  *
@@ -22,8 +22,8 @@ public class SimpleImageOutputRenderer extends SimpleRenderer {
 	private final Path outputDir;
 	private final Path images;
 
-	public SimpleImageOutputRenderer(RegionRenderer renderer, Path outputDir) {
-		super(renderer);
+	public SimpleImageOutputRenderer(Path outputDir) {
+		super();
 		this.outputDir = outputDir;
 		this.images = outputDir.resolve("tiles");
 	}
@@ -38,9 +38,9 @@ public class SimpleImageOutputRenderer extends SimpleRenderer {
 			modZ += 16;
 		}
 		Path p = images
-				.resolve(Integer.toHexString(modX))
-				.resolve(Integer.toHexString(modZ))
-				.resolve(Integer.toHexString(x / 16) + "_" + Integer.toHexString(z / 16) + ".gif");
+			.resolve(Integer.toHexString(modX))
+			.resolve(Integer.toHexString(modZ))
+			.resolve(Integer.toHexString(x / 16) + "_" + Integer.toHexString(z / 16) + ".png");
 		Files.createDirectories(p.getParent());
 		return p;
 	}
@@ -56,9 +56,10 @@ public class SimpleImageOutputRenderer extends SimpleRenderer {
 	}
 
 	@Override
-	protected void addImage(BufferedImage tile, int x, int z) throws IOException {
+	protected void addImage(BufferedImage tile, int dimension, int x, int z) throws IOException {
+		// todo use dimension
 		try (OutputStream out = Files.newOutputStream(getImageLocation(x, z))) {
-			ImageIO.write(tile, "gif", out);
+			ImageIO.write(tile, "png", out);
 		}
 	}
 

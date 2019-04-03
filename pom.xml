@@ -18,11 +18,6 @@
 	</distributionManagement>
 	<dependencies>
 		<dependency>
-			<groupId>com.flowpowered</groupId>
-			<artifactId>flow-nbt</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-compress</artifactId>
 			<version>1.11</version>
@@ -33,6 +28,33 @@
 			<artifactId>commons-cli</artifactId>
 			<version>1.4</version>
 			<type>jar</type>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.7</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.findbugs</groupId>
+			<artifactId>jsr305</artifactId>
+			<version>3.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>21.0</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-core</artifactId>
+			<version>1.3</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>
@@ -52,61 +74,26 @@
 		</resources>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<version>2.1</version>
-				<executions>
-					<execution>
-						<id>copy</id>
-						<phase>package</phase>
-						<goals>
-							<goal>copy</goal>
-						</goals>
-						<configuration>
-							<artifactItems>
-								<artifactItem>
-									<groupId>com.flowpowered</groupId>
-									<artifactId>flow-nbt</artifactId>
-									<version>1.0.0</version>
-									<overWrite>true</overWrite>
-									<outputDirectory>${project.basedir}/target/lib</outputDirectory>
-									<destFileName>flow-nbt-1.0.0.jar</destFileName>
-								</artifactItem>
-								<artifactItem>
-									<groupId>org.apache.commons</groupId>
-									<artifactId>commons-compress</artifactId>
-									<version>1.11</version>
-									<overWrite>true</overWrite>
-									<outputDirectory>${project.basedir}/target/lib</outputDirectory>
-									<destFileName>commons-compress-1.11.jar</destFileName>
-								</artifactItem>
-								<artifactItem>
-									<groupId>commons-cli</groupId>
-									<artifactId>commons-cli</artifactId>
-									<version>1.4</version>
-									<overWrite>true</overWrite>
-									<outputDirectory>${project.basedir}/target/lib</outputDirectory>
-									<destFileName>commons-cli-1.4.jar</destFileName>
-								</artifactItem>
-							</artifactItems>
-							<!-- other configurations here -->
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.4</version>
+				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
 					<archive>
 						<manifest>
-							<addClasspath>true</addClasspath>
-							<classpathPrefix>lib/</classpathPrefix>
 							<mainClass>me.ferrybig.java.minecraft.overview.mapper.Main</mainClass>
 						</manifest>
 					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
 				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

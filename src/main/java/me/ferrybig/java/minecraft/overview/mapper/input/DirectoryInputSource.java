@@ -6,28 +6,47 @@
 package me.ferrybig.java.minecraft.overview.mapper.input;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
 
 public class DirectoryInputSource implements InputSource {
 
-	private final File root;
+	private final Path root;
 
-	public DirectoryInputSource(File root) {
+	public DirectoryInputSource(Path root) {
 		this.root = root;
 	}
 
 	@Override
-	public Stream<PreparedFile> stream() {
-		List<File> files = new ArrayList<>();
-		files.add(new File(root, "level.dat"));
-		files.addAll(Arrays.asList(new File(root, "region").listFiles()));
-		return files.stream().map(f
-				-> PreparedFile.of(f.getName(), () -> new FileInputStream(f))
-		);
+	public InputInfo generateFileListing() throws IOException {
+		ArrayList<WorldFile> files = new ArrayList<>();
+		Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				String path = root.relativize(file).toString();
+				if (!File.separator.equals("/")) {
+					path = path.replace(File.separator, "/");
+				}
+				files.add(WorldFile.of(path));
+				return FileVisitResult.CONTINUE;
+			}
+		});
+		return new SimpleInputInfo(files) {
+			@Override
+			protected PreparedFile toPreparedFile(WorldFile file) throws IOException {
+				return PreparedFile.of(file, root.resolve(file.getOrignalName()));
+			}
+		};
+	}
+
+	@Override
+	public String toString() {
+		return "DirectoryInputSource{" + root + '}';
 	}
 
 }

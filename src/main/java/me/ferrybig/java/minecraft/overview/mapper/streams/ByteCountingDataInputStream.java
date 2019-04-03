@@ -18,7 +18,7 @@ public class ByteCountingDataInputStream extends DataInputStream implements Byte
 
 	public ByteCountingDataInputStream(InputStream in) {
 		super(in = new ByteCounterInputStream(in));
-		this.counter = (ByteCounterInputStream) in;
+		this.counter = (ByteCounterInput) in;
 	}
 
 	@Override

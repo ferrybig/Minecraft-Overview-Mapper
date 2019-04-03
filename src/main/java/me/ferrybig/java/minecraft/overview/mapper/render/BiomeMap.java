@@ -7,9 +7,12 @@ package me.ferrybig.java.minecraft.overview.mapper.render;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import me.ferrybig.java.minecraft.overview.mapper.textures.BiomeMapId;
 
 /**
  *
@@ -17,88 +20,97 @@ import java.io.InputStreamReader;
  */
 public class BiomeMap {
 
-	public static final int INDEX_MASK = 255;
-	public static final int SIZE = 256;
-	public final Biome defaultBiome;
-	public final Biome[] biomes;
+	private static final String DEFAULT_BIOME_STRING = "default";
+	@Nonnull
+	private final Biome defaultBiome;
+	@Nonnull
+	private final Biome[] biomes;
 
-	public BiomeMap(Biome[] biomes, Biome defaultBiome) {
+	private BiomeMap(@Nonnull Biome[] biomes, @Nonnull Biome defaultBiome) {
 		this.biomes = biomes;
 		this.defaultBiome = defaultBiome;
 	}
 
-	protected static BiomeMap load(BufferedReader paramBufferedReader, String paramString) throws IOException {
-		Biome[] arrayOfBiome = new Biome[256];
-		Biome localBiome = null;
-		int i = 0;
-		String str;
-		while ((str = paramBufferedReader.readLine()) != null) {
-			i++;
-			if ((!str.trim().isEmpty())
-					&& (!str.trim().startsWith("#"))) {
-				String[] arrayOfString = str.split("\t", 5);
-				if (arrayOfString.length < 4) {
-					System.err.println("Invalid biome map line at " + paramString + ":" + i + ": " + str);
+	@Nonnull
+	protected static BiomeMap load(@Nonnull BufferedReader reader, @Nullable String fileName) throws IOException {
+		Biome[] biomeMap = new Biome[256];
+		Biome defaultBiome = null;
+		int lineNumber = 0;
+		String line;
+		while ((line = reader.readLine()) != null) {
+			lineNumber++;
+			String lineTrimmed = line.trim();
+			if ((!lineTrimmed.isEmpty()) && (!lineTrimmed.startsWith("#"))) {
+				String[] split = line.split("\t", 5);
+				if (split.length < 4) {
+					throw new IOException("Invalid biome map line at " + fileName + ":" + lineNumber + ": " + line);
 				} else {
-					int j = parseInt(arrayOfString[1]);
-					int k = parseInt(arrayOfString[2]);
-					int m = parseInt(arrayOfString[3]);
-					if ("default".equals(arrayOfString[0])) {
-						localBiome = new Biome(j, k, m, true);
+					int grassColor = parseNumber(split[1]);
+					int foliageColor = parseNumber(split[2]);
+					int waterColor = parseNumber(split[3]);
+					if (DEFAULT_BIOME_STRING.equals(split[0])) {
+						defaultBiome = new Biome(grassColor, foliageColor, waterColor, true);
 					} else {
-						int n = parseInt(arrayOfString[0]);
-						arrayOfBiome[n] = new Biome(j, k, m, false);
+						int biomeId = parseNumber(split[0]);
+						biomeMap[biomeId] = new Biome(grassColor, foliageColor, waterColor, false);
 					}
 				}
 			}
 		}
-		if (localBiome == null) {
-			localBiome = new Biome(-65281, -65281, -65281, true);
+		if (defaultBiome == null) {
+			defaultBiome = new Biome(-65281, -65281, -65281, true);
 		}
-		return new BiomeMap(arrayOfBiome, localBiome);
+		return new BiomeMap(biomeMap, defaultBiome);
 	}
 
-	private static int parseInt(String paramString) {
-		if (paramString.startsWith("0x")) {
-			return (int) Long.parseLong(paramString.substring(2), 16);
+	private static int parseNumber(String input) {
+		if (input.startsWith("0x")) {
+			return (int) Long.parseLong(input.substring(2), 16);
 		}
-		return (int) Long.parseLong(paramString);
+		return (int) Long.parseLong(input);
 	}
 
+	@Nonnull
 	public static BiomeMap loadDefault() throws IOException {
-		try (BufferedReader localBufferedReader = new BufferedReader(new InputStreamReader(BiomeMap.class.getResourceAsStream("biome-colors.txt")))) {
-			return load(localBufferedReader, "(default biome colors)");
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(BiomeMap.class.getResourceAsStream("biome-colors.txt")))) {
+			return load(reader, "(default biome colors)");
 		}
 
 	}
 
-	public static BiomeMap load(File paramFile) throws IOException {
-		try (BufferedReader localBufferedReader = new BufferedReader(new FileReader(paramFile))) {
-			return load(localBufferedReader, paramFile.getPath());
+	@Nonnull
+	public static BiomeMap load(File file) throws IOException {
+		try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+			return load(reader, file.getPath());
 		}
 	}
 
-	public Biome getBiome(int paramInt) {
-		if ((paramInt >= 0) && (paramInt < this.biomes.length)
-				&& (this.biomes[paramInt] != null)) {
-			return this.biomes[paramInt];
+	@Nonnull
+	public Biome getBiome(int biomeId) {
+		if ((biomeId >= 0) && (biomeId < this.biomes.length)
+			&& (this.biomes[biomeId] != null)) {
+			return this.biomes[biomeId];
 		}
 
 		return this.defaultBiome;
 	}
 
+	public int getBiomeColor(int biomeId, @Nonnull BiomeMapId mapId) {
+		return this.getBiome(biomeId).getMultiplier(mapId);
+	}
+
 	public static final class Biome {
 
-		public final int grassColor;
-		public final int foliageColor;
-		public final int waterColor;
-		public final boolean isDefault;
+		private final int grassColor;
+		private final int foliageColor;
+		private final int waterColor;
+		private final boolean isDefault;
 
-		public Biome(int paramInt1, int paramInt2, int paramInt3, boolean paramBoolean) {
-			this.grassColor = paramInt1;
-			this.foliageColor = paramInt2;
-			this.waterColor = paramInt3;
-			this.isDefault = paramBoolean;
+		private Biome(int grassColor, int foliageColor, int waterColor, boolean isDefaultBiome) {
+			this.grassColor = grassColor;
+			this.foliageColor = foliageColor;
+			this.waterColor = waterColor;
+			this.isDefault = isDefaultBiome;
 		}
 
 		public int getMultiplier(int paramInt) {
@@ -111,6 +123,19 @@ public class BiomeMap {
 					return this.waterColor;
 			}
 			return -1;
+		}
+
+		public int getMultiplier(BiomeMapId mapId) {
+			switch (mapId) {
+				case GRASS:
+					return this.grassColor;
+				case LEAVES:
+					return this.foliageColor;
+				case WATER:
+					return this.waterColor;
+				default:
+					throw new IllegalArgumentException("Unknown map id: " + mapId);
+			}
 		}
 	}
 }

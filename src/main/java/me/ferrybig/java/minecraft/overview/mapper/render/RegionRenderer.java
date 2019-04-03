@@ -5,12 +5,12 @@
  */
 package me.ferrybig.java.minecraft.overview.mapper.render;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
+import me.ferrybig.java.minecraft.nbt.exception.NBTException;
+import me.ferrybig.java.minecraft.overview.mapper.input.PreparedFile;
 
 public interface RegionRenderer {
 
-	public BufferedImage renderFile(String fileName, InputStream in)
-			throws IOException;
+	public RenderOutput renderFile(PreparedFile file, int lastModified)
+		throws IOException, NBTException;
 }

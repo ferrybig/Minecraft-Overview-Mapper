@@ -6,14 +6,10 @@
 package me.ferrybig.java.minecraft.overview.mapper.input;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 public interface InputSource {
 
-	public Stream<PreparedFile> stream() throws IOException;
-
-	public default void closeStreamIfNeeded(InputStream in) throws IOException {
-		in.close();
-	}
+	@Nonnull
+	public InputInfo generateFileListing() throws IOException;
 }
