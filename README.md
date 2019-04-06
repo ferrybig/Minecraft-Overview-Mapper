@@ -77,3 +77,6 @@ Its always good to see the output before running code, example render output:
 
 https://ferrybig.me/uploads/WorldRender/index.html#10/0.0000/0.0000
 
+## TODO
+
+ -  Implement rendering for 1.12 chunks and lower
