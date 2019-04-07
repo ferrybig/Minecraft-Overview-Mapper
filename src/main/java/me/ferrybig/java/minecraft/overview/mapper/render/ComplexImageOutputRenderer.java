@@ -38,7 +38,7 @@ import me.ferrybig.java.minecraft.overview.mapper.input.WorldFile.Type;
  */
 public class ComplexImageOutputRenderer extends SimpleRenderer {
 
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 
 	@Nonnull
 	private final Path outputDir;
