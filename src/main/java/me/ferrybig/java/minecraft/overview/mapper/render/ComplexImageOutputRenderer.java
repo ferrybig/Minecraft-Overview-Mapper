@@ -130,20 +130,19 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 
 	@Override
 	protected void addImage(BufferedImage tile, int dimension, int x, int z) throws IOException {
-		// todo use dimension
 		int currentZoom = this.normalZoom;
 		int imageWidth = tile.getWidth();
 		int adjustedImageWidth = imageWidth;
-		int tilesToGenerate = 1;
+		int tilesInThisLayer = 1;
 
 		BufferedImage renderResult = new BufferedImage(this.normalRes, this.normalRes, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2 = renderResult.createGraphics();
 		g2.setComposite(AlphaComposite.Src);
 		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		try {
-			for (; adjustedImageWidth >= this.normalRes; adjustedImageWidth /= 2, tilesToGenerate *= 2, currentZoom++) {
-				for (int tileX = 0; tileX < tilesToGenerate; tileX++) {
-					for (int tileZ = 0; tileZ < tilesToGenerate; tileZ++) {
+			for (; adjustedImageWidth >= this.normalRes; adjustedImageWidth /= 2, tilesInThisLayer *= 2, currentZoom++) {
+				for (int tileX = 0; tileX < tilesInThisLayer; tileX++) {
+					for (int tileZ = 0; tileZ < tilesInThisLayer; tileZ++) {
 						g2.drawImage(
 							tile,
 							// dst x1,y1
@@ -159,8 +158,8 @@ public class ComplexImageOutputRenderer extends SimpleRenderer {
 						final Path imageLocation = getImageLocation(
 							dimension,
 							currentZoom,
-							x * tilesToGenerate + tileX,
-							z * tilesToGenerate + tileZ
+							x * tilesInThisLayer + tileX,
+							z * tilesInThisLayer + tileZ
 						);
 						if (DEBUG && false) {
 							System.err.println("Rendering zoom level " + currentZoom + ", tile: " + tileX + ", " + tileZ + " (" + x + "," + z + ") ");
