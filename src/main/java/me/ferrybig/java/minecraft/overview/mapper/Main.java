@@ -212,12 +212,21 @@ public class Main {
 			.hasArg()
 			.build();
 
+		Option biomeMap = Option
+			.builder("b")
+			.argName("biome-map")
+			.desc("Path to the biome map file")
+			.longOpt("biome-map")
+			.hasArg()
+			.build();
+
 		options.addOption(input);
 		options.addOption(output);
 		options.addOption(sequentional);
 		options.addOption(parallel);
 		options.addOption(minecraftDirectory);
 		options.addOption(texturePacks);
+		options.addOption(biomeMap);
 
 		CommandLineParser cmdParser = new DefaultParser();
 		CommandLine cmd;
@@ -234,6 +243,15 @@ public class Main {
 			return null;
 		}
 
+		System.out.println("Loading biome colors...");
+		BiomeMap map;
+		String mapFile = cmd.getOptionValue(biomeMap.getOpt());
+		if (mapFile == null) {
+			map = BiomeMap.loadDefault();
+		} else {
+			map = BiomeMap.load(new File(mapFile));
+		}
+
 		System.out.println("Loading textures...");
 		TextureParser parser = new TextureParser();
 		final List<Path> locateTexturePacks = locateTexturePacks(
@@ -242,7 +260,7 @@ public class Main {
 		);
 		locateTexturePacks.forEach(System.out::println);
 		parser.readAllPaths(locateTexturePacks);
-		final TextureCache textureCache = new TextureCache(parser, BiomeMap.loadDefault());
+		final TextureCache textureCache = new TextureCache(parser, map);
 
 		System.out.println("Initizing rendering system");
 		RegionRenderer renderer = new FlatImageRenderer(textureCache);
