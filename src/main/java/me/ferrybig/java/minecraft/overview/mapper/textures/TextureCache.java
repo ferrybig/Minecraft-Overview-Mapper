@@ -173,6 +173,7 @@ public class TextureCache {
 
 		void apply(@Nonnull int[] dstPixels);
 
+		@Nonnull
 		String getBlock();
 	}
 

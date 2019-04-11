@@ -7,7 +7,9 @@ package me.ferrybig.java.minecraft.overview.mapper.textures.blockstate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.SimpleVariant;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.Variant;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.VariantModel;
@@ -15,13 +17,14 @@ import me.ferrybig.java.minecraft.overview.mapper.textures.variant.specifier.Var
 
 public class MultiBlockState implements UnresolvedBlockState {
 
+	@Nonnull
 	private final List<Entry> partList;
 
-	public MultiBlockState(Map<VariantSpecifier, VariantModel> list) {
+	public MultiBlockState(@Nonnull Map<VariantSpecifier, VariantModel> list) {
 		this.partList = list.entrySet().stream().map(e -> new Entry(e.getKey(), e.getValue())).collect(Collectors.toList());
 	}
 
-	public MultiBlockState(List<Map.Entry<VariantSpecifier, VariantModel>> list) {
+	public MultiBlockState(@Nonnull List<Map.Entry<VariantSpecifier, VariantModel>> list) {
 		this.partList = list.stream().map(e -> new Entry(e.getKey(), e.getValue())).collect(Collectors.toList());
 	}
 
@@ -37,18 +40,22 @@ public class MultiBlockState implements UnresolvedBlockState {
 
 	private static class Entry {
 
+		@Nonnull
 		private final VariantSpecifier specifier;
+		@Nonnull
 		private final VariantModel variant;
 
-		public Entry(VariantSpecifier specifier, VariantModel variant) {
-			this.specifier = specifier;
-			this.variant = variant;
+		public Entry(@Nonnull VariantSpecifier specifier, @Nonnull VariantModel variant) {
+			this.specifier = Objects.requireNonNull(specifier, "specifier");
+			this.variant = Objects.requireNonNull(variant, "variant");
 		}
 
+		@Nonnull
 		public VariantSpecifier getSpecifier() {
 			return specifier;
 		}
 
+		@Nonnull
 		public VariantModel getVariant() {
 			return variant;
 		}

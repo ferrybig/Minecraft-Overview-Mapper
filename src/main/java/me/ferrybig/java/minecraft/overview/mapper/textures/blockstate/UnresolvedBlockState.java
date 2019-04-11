@@ -6,9 +6,11 @@
 package me.ferrybig.java.minecraft.overview.mapper.textures.blockstate;
 
 import java.util.Map;
+import javax.annotation.Nonnull;
 import me.ferrybig.java.minecraft.overview.mapper.textures.variant.Variant;
 
 public interface UnresolvedBlockState {
 
-	public Variant resolve(Map<String, String> state);
+	@Nonnull
+	public Variant resolve(@Nonnull Map<String, String> state);
 }
