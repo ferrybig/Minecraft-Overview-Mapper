@@ -10,10 +10,10 @@ import javax.annotation.Nonnull;
 
 public class Rotation {
 
-	private final @Nonnull
-	Vector3d origin;
-	private final @Nonnull
-	Axis rotation;
+	@Nonnull
+	private final Vector3d origin;
+	@Nonnull
+	private final Axis rotation;
 	/**
 	 * degrees, default 0
 	 */
@@ -28,10 +28,12 @@ public class Rotation {
 		this.rescale = rescale;
 	}
 
+	@Nonnull
 	public Vector3d getOrigin() {
 		return origin;
 	}
 
+	@Nonnull
 	public Axis getRotation() {
 		return rotation;
 	}

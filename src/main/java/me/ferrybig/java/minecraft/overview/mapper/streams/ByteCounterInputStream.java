@@ -8,6 +8,7 @@ package me.ferrybig.java.minecraft.overview.mapper.streams;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import javax.annotation.Nonnull;
 
 /**
  *
@@ -18,7 +19,7 @@ public class ByteCounterInputStream extends FilterInputStream implements ByteCou
 	private long readBytes = 0;
 	private long readBytesWithoutMark = 0;
 
-	public ByteCounterInputStream(InputStream in) {
+	public ByteCounterInputStream(@Nonnull  InputStream in) {
 		super(in);
 	}
 
@@ -29,13 +30,13 @@ public class ByteCounterInputStream extends FilterInputStream implements ByteCou
 	}
 
 	@Override
-	public synchronized void reset() throws IOException {
+	public void reset() throws IOException {
 		in.reset();
 		readBytes = readBytesWithoutMark;
 	}
 
 	@Override
-	public synchronized void mark(int readlimit) {
+	public void mark(int readlimit) {
 		in.mark(readlimit);
 		readBytesWithoutMark = readBytes;
 	}

@@ -7,6 +7,7 @@ package me.ferrybig.java.minecraft.overview.mapper.streams;
 
 import java.io.DataInputStream;
 import java.io.InputStream;
+import javax.annotation.Nonnull;
 
 /**
  *
@@ -14,9 +15,10 @@ import java.io.InputStream;
  */
 public class ByteCountingDataInputStream extends DataInputStream implements ByteCounterInput {
 
+	@Nonnull
 	private final ByteCounterInput counter;
 
-	public ByteCountingDataInputStream(InputStream in) {
+	public ByteCountingDataInputStream(@Nonnull InputStream in) {
 		super(in = new ByteCounterInputStream(in));
 		this.counter = (ByteCounterInput) in;
 	}
