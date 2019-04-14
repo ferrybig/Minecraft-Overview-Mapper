@@ -59,6 +59,12 @@ efficiently when updating an existing render, or when resuming an aborted render
 This has been tested on a Minecraft world consisting of over 2000 region files,
 and over 5 GB in size. At the moment, this feature cannot be disabled
 
+## uilding
+
+Since this software uses Maven, you can quickly create a build for it to run it, either build it from your favorite IDE, or run:
+
+    mvn install
+
 ## Examples
 
 ### Simple renders:
